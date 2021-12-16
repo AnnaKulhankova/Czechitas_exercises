@@ -1,18 +1,28 @@
+#importuji moduly
 import csv
 import sys
+#definuji hodnotu z prikazoveho radu a prevadim na int
 delici_hodnota = int(sys.argv[1])
+#nacitam data ze souboru netflix_titles.csv a ukladam je jako seznam
 with open('netflix_titles.csv', 'r', encoding = 'utf-8') as netflix_titles:
     reader = csv.reader(netflix_titles, delimiter=',')
     titles = list(reader)
 netflix_titles.close()
-short_tsv = open('shorts.tsv', 'w', encoding = 'utf-8')
-long_tsv = open('longs.tsv', 'w', encoding='utf-8')
+#oteviram dva soubory ve write módu, kam budu zapisovat výsledek
+short_tsv = open('short.tsv', 'w', encoding = 'utf-8')
+long_tsv = open('long.tsv', 'w', encoding='utf-8')
 for casy in titles:
+  #udávám podmínku, aby program vybral ty radky, kde hodnoty v duration sloupci konci na "min"
   if casy[9].endswith("min"):
+    #vypichuji si udaj o case jako samotny int, abych ho mohla dale porovnavat
     casy_int = int(casy[9].replace("min", ""))
-    if casy_int < delici_hodnota:
-      shorts = "\t".join(casy)
-      short_tsv.write(shorts+'\n')
-    else:
+    #udavam dalsi podminku - tam, kde je splneno predchozi vyber hodnoty delsi a stejne dlouhe nez v prikazovem radku a zapis je do souboru long.tsv - odradkovane a oddelene tabem
+    if casy_int >= delici_hodnota:
       longs = "\t".join(casy)
       long_tsv.write(longs+'\n')
+    #ostatni hodnoty (tedy ty kratsi) zapisuji obdobne do short.tsv
+    else:
+      shorts = "\t".join(casy)
+      short_tsv.write(shorts+'\n')
+short_tsv.close()
+long_tsv.close()
