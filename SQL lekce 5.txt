@@ -1,0 +1,424 @@
+-- LEKCE 5: INSERT, DELETE, CREATE, ALTER A IMPORT DAT
+------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------                        
+-- USE database; USE schema
+-- UI
+-- Příkaz
+---------------------------------------------------------
+--schema se dá bud zaklikat nebo prikazem:
+-- Prikaz - jak to delat v kodu - USE
+//USE ROLE ROLE_CZECHITA_PRIJMENIK;
+//USE SCHEMA SCH_CZECHITA_PRIJMENIK;
+-- 1. ROLE -- zadejte svou roli
+-- 2. WAREHOUS
+-- 3. DATABASE
+-- 4. SCHEMA -- zadejte sve schema
+-- UKOLY ----------------------------------------------------------
+--> 1. Vyberte 10 řádku z tabulky TEROR.
+------------------------------------------------------------------
+SELECT *
+FROM sch_czechita.teror
+LIMIT 10;
+-- Kdyz jsme v našem schematu, musíme dát celou cestu k tabulce, protože to sahá jen do toho naseho.
+-- CREATE TABLE
+
+CREATE TABLE NEW_TABLE (
+    ID INT
+    , NAME VARCHAR(255)
+    , BIRTH_DATE DATE);
+
+SELECT * FROM NEW_TABLE; -- OVERIME, ZE EXISTUJE
+
+DESC TABLE NEW_TABLE; -- OVERIME DATOVE TYPY A SLOUPCE
+
+---------------------------------------------------------
+-- DROP TABLE (smazání tabulky), UNDROP (restore tabulky)
+
+DROP TABLE NEW_TABLE;
+UNDROP TABLE NEW_TABLE;
+
+-- CREATE OR REPLACE TABLE (přepis již existující tabulky)
+---------------------------------------------------------
+-- DROP & UNDROP NOVA_TABULKA
+-- DROP & CREATE TABLE
+-- CREATE OR REPLACE
+---------------------------------------------------------                        
+-- INSERT INTO TABULKA (SLOUPEC1, SLOUPEC2) ... VALUES
+
+---------------------------------------------------------                        
+-- vložení jednotlivých řádků do tabulky
+-- !!! Kolikrát příkaz spustíme, tolikrát se data vloží.
+-- UKOLY ----------------------------------------------------------
+--> 1. Přepiště svou tabulku MOJE_PRVNI_TABULKA tak, že bude mít následující strukturu:
+        -- ID (celé číslo - INT) (zůstává stejné) 
+        -- JMENO_ZAKAZNIKA (textový řetězec, max 1000 znaků - VARCHAR(1000))
+        -- DATUM_NAROZENI (datum - DATE) (zůstává stejné)
+        -- SLEVA (desetinné číslo s dvěmi místy - NUMBER(38,2))
+
+CREATE OR REPLACE TABLE NEW_TABLE (
+    ID INT
+    , JMENO_ZAKAZNIKA VARCHAR(1000)
+    , DATUM_NAROZENI DATE
+    , SLEVA NUMBER(38,2));
+
+--> 2. Do tabulky vložte následující řádky:
+    -- 1, 'Václav Košmel', '1968-01-03', 5.3
+    -- 2, 'Květoslava Smílická', '1948-01-03', 10.5
+
+INSERT INTO NEW_TABLE(ID, JMENO_ZAKAZNIKA, DATUM_NAROZENI, SLEVA)
+    VALUES
+    (1, 'Václav Košmel', '1968-01-03', 5.3),
+    (2, 'Květoslava Smílická', '1948-01-03', 10.5);
+    
+------------------------------------------------------------------
+-- Co když budeme vkládat nevalidní data? (např. datum)
+INSERT INTO NEW_TABLE(ID, JMENO_ZAKAZNIKA, DATUM_NAROZENI, SLEVA)
+    VALUES
+    (1, 'Václav Košmel', '1.6.1985', 5.3); -- vysledek: date not recognized
+
+---------------------------------------------------------                        
+-- TEROR PŘÍKLAD - CREATE TABLE + INSERT
+--------------------------------------------------------- 
+CREATE TABLE NEW_TEROR (
+  ID INT,
+  GNAME VARCHAR(255),
+  NKILL INT,
+  NWOUND INT
+); 
+
+INSERT INTO NEW_TEROR (ID, GNAME, NKILL, NWOUND) 
+  VALUES 
+    (1, 'Žoldáci', 10, 1), 
+    (2, 'Nosiči smrti', 15, 2), 
+    (3, 'Nějací další teroristi', 155, 5);
+SELECT * FROM NEW_TEROR;
+
+-- AUTOINCREMENT & PK VE SNOWFLAKE
+CREATE OR REPLACE TABLE NEW_TEROR ( --> DATA SE SMAŽOU
+  ID INT AUTOINCREMENT, -- ID se automaticky doplní a navýší o 1 s každou další řádkou v insertu
+  GNAME VARCHAR(250),
+  NKILL INT,
+  NWOUND INT,
+  CONSTRAINT id_pk PRIMARY KEY (id) -- id_pk je moje pojmenovani, ktere si vymyslim a rikam, ze primary key ma zapisovat do sloupce ID
+);
+
+INSERT INTO NEW_TEROR (GNAME, NKILL, NWOUND) -- ted uz se ID doplni samo při každém insertu
+  VALUES 
+    ('Žoldáci', 10, 1), 
+    ('Nosiči smrti', 15, 2), 
+    ('Nějací další teroristi', 155, 5);
+SELECT * FROM NEW_TEROR;
+-- unikátnost PK není ve SF vynucovaná, takze je to vlastne vsechno jedno
+INSERT INTO NEW_TEROR (ID, GNAME, NKILL, NWOUND) -- ted uz je tam dvakrat id 1, dulaz toho, že SF je to fuk
+  VALUES 
+    (1, 'Žoldáci', 10, 1);
+SELECT * 
+FROM NEW_TEROR
+ORDER BY ID;
+---------------------------------------------------------                        
+-- INSERT INTO TABULKA(SLOUPEC1, SLOUPEC2) SELECT
+---------------------------------------------------------                        
+--> Chci tabulku NEW_TEROR obohatit o data z tabulky SCH_CZECHITA.TEROR 
+-- data pouze z roku 2015, organizace 'Muslim extremists' a pouze útoky s alespoň jedním zabitým nebo jedním zraněným
+-- pouze sloupečky, co jsou v tabulce NEW_TEROR, ID se opět doplní automaticky
+
+ INSERT INTO NEW_TEROR (GNAME, NKILL, NWOUND)
+ SELECT
+    GNAME
+    , NKILL
+    , NWOUND
+FROM SCH_CZECHITA.TEROR
+WHERE IYEAR = 2015
+    AND GNAME = 'Muslim extremists'
+    AND (NKILL > 0 OR NWOUND > 0);
+ 
+---------------------------------------------------------                        
+-- CREATE TABLE TABULKA AS SELECT
+---------------------------------------------------------                        
+-- tabulku NEW_TEROR můžeme vytvořit přímo ze SELECT příkazu (nemusíme nejdřív vytvářet prázdnou tabulku)
+-- CREATE TABLE NEW_TEROR_SELECT AS SELECT (bez ID)
+--> muzeme zde menit i datove typy
+-- dá se do ní i dále insertovat
+
+ CREATE OR REPLACE TABLE NEW_TEROR_SELECT AS
+ SELECT
+    GNAME::VARCHAR(255) AS GNAME -- změny datový typů, musí se tomu dát alias, jinak to takhle pojmenuje sloupec
+    , NKILL
+    , NWOUND
+FROM SCH_CZECHITA.TEROR
+WHERE IYEAR = 2015
+    AND GNAME = 'Muslim extremists'
+    AND (NKILL > 0 OR NWOUND > 0);
+
+---------------------------------------------------------                        
+-- TRVALÁ vs. DOČASNÁ tabulka
+--------------------------------------------------------- 
+CREATE TEMPORARY TABLE UDALOSTI_JEN_V_CESKU AS 
+SELECT
+    GNAME
+    , CITY
+    , NKILL
+    , NWOUND
+FROM SCH_CZECHITA.TEROR
+WHERE COUNTRY_TXT = 'Czech Republic';
+
+-- CREATE TEMPORARY TABLE = dočasná tabulka, zanikne, když se odhlásíme
+-- pokud bychom pouzivali stejna jmena pro docasne a trvale tabulky - SF se primarně diva do tech docasnych
+
+---------------------------------------------------------   
+-- DELETE FROM TABULKA WHERE .. (smazání dat z tabulky na základě podmínky)
+-- TRUNCATE TABLE (smazání dat z tabulky)
+---------------------------------------------------------   
+CREATE TABLE MAZACI_TABULKA (
+  ID INT
+  , TEXT VARCHAR(255)
+);
+INSERT INTO MAZACI_TABULKA(ID, TEXT)
+    VALUES
+    (1, 'TEXT1'),
+    (2, 'TEXT2'),
+    (3, 'TEXT3');
+SELECT * FROM MAZACI_TABULKA;
+-- DELETE s WHERE (chci se zbavit prvniho radku)
+
+DELETE FROM MAZACI_TABULKA
+WHERE ID = 1;
+
+-- DELETE bez WHERE smaze celou tabulku
+
+DELETE FROM MAZACI_TABULKA;
+
+-- opět vložíme hodnoty
+INSERT INTO MAZACI_TABULKA(ID, TEXT)
+    VALUES
+    (1, 'TEXT1'),
+    (2, 'TEXT2'),
+    (3, 'TEXT3');
+
+-- TRUNCATE smaze opet celou tabulku
+TRUNCATE TABLE MAZACI_TABULKA;
+
+
+---------------------------------------------------------                        
+-- ALTER TABLE TABULKA ALTER COLUMN ...
+---------------------------------------------------------                        
+SELECT * FROM NEW_TEROR;
+DESC TABLE NEW_TEROR;
+-- Změna datového typu - pouze některé změny povoleny
+ALTER TABLE NEW_TEROR ALTER COLUMN GNAME VARCHAR(350); -- můžeme pouze přidávat
+/* u cisel lze desetinna mista snizovat i zvysovat, celkově menit data typy pompci alter table neni uplne idealni */
+
+-- ALTER TABLE NEW_TABLE RENAME (COLUMN NAZEV_SLOUPCE) TO -- na prejmenovani tabulky/sloupce
+---------------------------------------------------------                        
+-- ALTER TABLE TABULKA ADD/DROP COLUMN ..
+---------------------------------------------------------
+-- ADD
+ALTER TABLE NEW_TEROR ADD CONTINENT VARCHAR(255); -- prida novy sloupec, zase musim dat datovy typ!
+-- DROP
+DROP TABLE NEW_TEROR DROP COLUMN CONTINENT;
+
+---------------------------------------------------------                        
+-- UPDATE TABULKA SET SLOUPEC = X WHERE PODMINKA
+---------------------------------------------------------   
+-- NEW_TEROR - NWOUND NULL nahradit 0
+-- Upravit se dá i několik sloupců v jednom příkazu
+
+UPDATE NEW_TEROR SET NWOUND = 0
+WHERE NWOUND IS NULL;
+
+-- UKOLY ----------------------------------------------------------
+--> 1. Vytvořte dočasnou tabulku UDALOSTI_JEN_V_RAKOUSKU jako select z tabulky TEROR.
+    -- Pouze sloupečky GNAME, CITY, NKILL A NWOUND
+    -- COUNTRY_TXT = 'Austria'
+    -- Dosaďte pomocí UPDATE do GNAME 'Neznámá organizace', kde je GNAME 'Unkown'
+    -- Přidejte sloupeček COUNTRY a pomocí UPDATE dosaďte 'Rakousko'
+    
+ CREATE TEMPORARY TABLE UDALOSTI_JEN_V_RAKOUSKU AS
+ SELECT
+    GNAME
+    , CITY
+    , NKILL
+    , NWOUND
+FROM SCH_CZECHITA.TEROR
+WHERE COUNTRY_TXT = 'Austria';
+
+UPDATE UDALOSTI_JEN_V_RAKOUSKU SET 
+GNAME = 'Neznama organizace' WHERE GNAME = 'Unknown';
+
+ALTER TABLE UDALOSTI_JEN_V_RAKOUSKU ADD COLUMN COUNTRY VARCHAR(255);
+
+UPDATE UDALOSTI_JEN_V_RAKOUSKU SET COUNTRY = 'Rakousko';
+
+------------------------------------------------------------------
+---------------------------------------------------------                        
+-- Import
+-- Ukázka ve snowflake
+-- Použijte data.csv
+---------------------------------------------------------                        
+-- Data.csv
+/*
+- kroky:
+1. podívat se do dat (Sublime Text, Atom, Notepad++ apod.)
+2. vytvořit tabulku s názvy sloupců a datovými typy
+3. vytvořit vyhovující file format
+4. nalít data
+- názvy sloupců
+ID INT, 
+FIRST_NAME VARCHAR(500), 
+LAST_NAME VARCHAR(500), 
+EMAIL VARCHAR(500), 
+CATEGORY_ID INT, 
+SHOP_ID INT, 
+PEASANT_ID INT, 
+TRANSACTION_DATE VARCHAR(50), 
+VIRGINITY_LEVEL INT, 
+PRICE_PER_GIG VARCHAR(500), 
+SEGNEMNT_TEXT VARCHAR(200), 
+URL VARCHAR(200), 
+BLOCKCHAIN_HASH VARCHAR(64)
+*/
+ 
+CREATE TABLE FAKE_DATE (
+ID INT, 
+FIRST_NAME VARCHAR(500), 
+LAST_NAME VARCHAR(500), 
+EMAIL VARCHAR(500), 
+CATEGORY_ID INT, 
+SHOP_ID INT, 
+PEASANT_ID INT, 
+TRANSACTION_DATE VARCHAR(50), 
+VIRGINITY_LEVEL INT, 
+PRICE_PER_GIG VARCHAR(500), 
+SEGNEMNT_TEXT VARCHAR(200), 
+URL VARCHAR(200), 
+BLOCKCHAIN_HASH VARCHAR(64)
+);
+
+
+---------------------------------------------------------                        
+-- ÚKOLY
+---------------------------------------------------------
+-- ÚKOLY
+---------------------------------------------------------
+/*
+//A/ Importujte ukol.csv do Snowflake. Vytvořte si tabulku, která bude obsahovat sloupce jako v csv souboru. 
+    //Prohlédněte si nejdříve data třeba v textovem nastroji (Podívejte se na datové typy. NÁPOVĚDA: Datum není datum importujte jako string).*/
+CREATE TABLE UKOL (
+    id  int
+    ,name varchar(255)
+    ,email varchar(255)
+    ,gender varchar(255)
+    ,birth_date varchar(255)
+    ,address varchar(255)
+    ,city varchar(255)
+    ,country varchar(255)
+    ,Postal_Code varchar(50));
+ 
+/*//B/ Importujte data do tabulky. Pozor budete si muset vytvořit vlastní file format!!!
+//C/
+Úprava dat:
+- Najděte řádky, kde není vyplněné jméno, nebo datum narození a ty vymažte.*/
+
+DELETE FROM UKOL 
+WHERE name IS NULL OR birth_date IS NULL;
+
+--- Priklad 2: V poli Birth Date odstraňte přebytečné mezery a vytvořte sloupec s datovým typem Date.( NÁPOVĚDA: REPLACE)
+
+--Vytvorim si novy pomocny sloupec s datatypem string, protoze datum narozeni je ve spatnem formatu 
+ALTER TABLE UKOL ADD COLUMN BIRTH_DATE_UPDATE VARCHAR(50);
+
+-- do noveho sloupce naliju hodnoty z puvodniho sloupce birth_date ale jiz bez mezer, abych je mohla nasledne prevest na univerzalni format data
+UPDATE UKOL
+SET birth_date_update = (REPLACE(birth_date, ' ')); 
+
+--hodnoty ve sloupci si prevedu na uni format data
+UPDATE UKOL
+SET BIRTH_DATE_UPDATE = (TO_DATE(birth_date_update, 'dd.mm.yyyy'));
+
+-- pridam novy sloupec, tentokrat uz s datatypem date
+ALTER TABLE UKOL ADD COLUMN BIRTH_DATE_FINAL DATE;
+
+--preliju hodnoty z pomocneho sloupce do finalniho
+UPDATE UKOL SET BIRTH_DATE_FINAL = BIRTH_DATE_UPDATE;
+
+-- pomocne sloupce a puvodni se spatnym formatem smazu a finalni sloupec prejmenuju
+ALTER TABLE UKOL DROP COLUMN BIRTH_DATE_UPDATE;
+ALTER TABLE UKOL DROP COLUMN BIRTH_DATE;
+ALTER TABLE UKOL RENAME COLUMN BIRTH_DATE_FINAL TO BIRTH_DATE;
+
+-- Priklad 3: Vytvořte dva nové sloupce Name and Surname a vložte do nich rozdělená data z pole Full name.
+/*- Pole Name a Surname upravte tak, aby první písmeno bylo vždy velké (nápověda funkce UPPER,SUBSTRING).*/
+
+ALTER TABLE UKOL ADD COLUMN NEW_NAME VARCHAR(255);
+
+UPDATE UKOL
+SET NEW_NAME = (SPLIT_PART(name, ' ', 1));
+                
+ALTER TABLE UKOL ADD COLUMN SURNAME VARCHAR(255);
+
+UPDATE UKOL
+SET SURNAME = (SPLIT_PART(name, ' ', 2));
+
+UPDATE UKOL
+SET NEW_NAME = (INITCAP(NEW_NAME));
+               
+UPDATE UKOL
+SET SURNAME = (INITCAP(SURNAME));
+
+ALTER TABLE UKOL DROP COLUMN NAME;
+                
+ALTER TABLE UKOL RENAME COLUMN NEW_NAME TO NAME;                
+
+SELECT * FROM UKOL;
+               
+//D/ Vypište počet klientů dle věkových kategorií (1-10,10-20,20-30,více než 30) žijících v Číně.
+               
+SELECT 
+     COUNT(*)
+     ,CASE
+        WHEN DATEDIFF(YEAR, BIRTH_DATE, CURRENT_DATE()) <= 10 THEN '1-10 years old'
+        WHEN DATEDIFF(YEAR, BIRTH_DATE, CURRENT_DATE()) <= 20 THEN '10-20 years old'
+        WHEN DATEDIFF(YEAR, BIRTH_DATE, CURRENT_DATE()) <= 30 THEN '20-30 years old'
+        ELSE 'over 30 years old'
+        END AS AGE_CAT
+FROM UKOL
+WHERE COUNTRY = 'China'
+GROUP BY AGE_CAT;               
+        
+*/
+-- BONUSOVÉ
+-------------------------------------_--------------------                        
+-- Nešťastný UPDATE a kouzelný SELECT AT (TIME TRAVEL)
+---------------------------------------------------------                        
+---- BONUS: TIME TRAVEL     
+CREATE OR REPLACE TABLE xx_prycsemnou AS
+SELECT
+    gname
+    ,city
+    ,SUM(nkill) killed
+    ,SUM(nwound) wounded
+FROM TEROR
+WHERE iyear=2016
+GROUP BY gname, city;
+ 
+SELECT * FROM xx_prycsemnou;
+-- SELECT CURRENT_TIMESTAMP();
+UPDATE xx_prycsemnou SET killed = 0; -- TADY NAM TROCHU CHYBI PODMINKA
+-- jak to spravit?
+SELECT * FROM xx_prycsemnou AT(OFFSET => -30);
+SELECT * FROM xx_prycsemnou AT(STATEMENT => ''); --> query id selectu, kdy tabulka byla ok
+SELECT * FROM xx_prycsemnou AT(TIMESTAMP => ''::TIMESTAMP); --> timestamp, kdy tabulka byla ok (CAS V UTC)
+CREATE OR REPLACE TABLE xx_prycsemnou_zdrava AS
+SELECT * FROM xx_prycsemnou BEFORE(STATEMENT => ''); --> query id selectu, ktery to zkazil
+SELECT * FROM xx_prycsemnou_zdrava;
+DROP TABLE xx_prycsemnou;
+---- BONUS: NULLS
+CREATE OR REPLACE TABLE NULLS (
+  COL1 VARCHAR
+  , COL2 VARCHAR
+);
+INSERT INTO NULLS 
+  VALUES
+  (NULL, '1'),
+  ('1', NULL),
+  (NULL, NULL);

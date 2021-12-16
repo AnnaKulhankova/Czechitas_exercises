@@ -1,0 +1,23 @@
+#Cvičení 2
+from requests_html import HTMLSession
+session = HTMLSession()
+stranka = session.get('https://apps.kodim.cz/python-data/dhmo')
+
+#1
+for odstavec in stranka.html.find('h2'):
+  print(odstavec.text)
+
+#2
+for odstavec in stranka.html.find('a'):
+  print(odstavec.attrs['href'])
+
+#3
+for odstavec in stranka.html.find('img'):
+  print(odstavec.attrs['src'])
+
+#Cvičení 3
+from requests_html import HTMLSession
+session = HTMLSession()
+stranka = session.get('https://kodim.cz/czechitas/python-data/zaklady-programovani/prvni-programy')
+for odstavec in stranka.html.find(' .exercises-section'):
+  print(odstavec.text)

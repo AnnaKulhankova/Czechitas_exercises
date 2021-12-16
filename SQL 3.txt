@@ -1,0 +1,291 @@
+------------------------------------------------------------------------------------------------------------------
+-- LEKCE 3: GROUP BY, HAVING
+------------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------                        
+-- AGREGACNI FCE
+---------------------------------------------------------
+-- VŽDYCKY POKUD CHCI POČÍTAT AGREGAČNÍ FUNKCE (NAPŘ. SUM), MUSÍM POUŽÍT GROUP BY!
+// X skalarni fce
+
+---------------------------------------------------------                        
+-- COUNT() - počet
+---------------------------------------------------------                        
+
+-- COUNT(*) VS COUNT(1)
+SELECT 
+    count(*) -- přeskakuje null radky!
+FROM teror;
+
+SELECT 
+    count(1)
+FROM teror;
+
+-- COUNT(DISTINCT x)
+
+SELECT 
+    count(DISTINCT country_txt) -- pocet unikatnich hodnot ve sloupecku
+FROM teror;
+
+---------------------------------------------------------                        
+-- SUM() - součet
+---------------------------------------------------------
+
+
+SELECT 
+    SUM(nkill) AS pocet_mrtvych
+FROM teror;
+
+
+---------------------------------------------------------                        
+-- AVG() - průměr
+---------------------------------------------------------  
+
+SELECT 
+    AVG(nkill) AS prumerny_pocet_mrtvych -- preskakuje null hodnoty!!
+FROM teror;
+
+---------------------------------------------------------                        
+-- MAX() - maximální hodnota
+---------------------------------------------------------                         
+
+-- vrati jedno cislo
+SELECT 
+    MAX(nkill) AS max_pocet_mrtvych
+FROM teror;
+
+
+-- chci vratit cely radek -- stejny vysledek jinou cestou -- PROBLÉM = kdyby i jiný radek se stejnym poctem, tak ukaze nahodne jen jeden z nich
+SELECT 
+    nkill AS max_pocet_mrtvych
+    , *
+FROM teror 
+WHERE nkill IS NOT NULL 
+ORDER BY nkill DESC 
+LIMIT 1; 
+
+
+
+---------------------------------------------------------                        
+-- MIN() - minimální hodnota
+---------------------------------------------------------                         
+
+                          
+SELECT 
+    MIN(nkill) AS min_pocet_mrtvych
+FROM teror
+where country_txt = 'Germany';
+
+
+---------------------------------------------------------                        
+-- GROUP BY - vytváření skupin na základě unikátních hodnot a můžu pak pro ty skupiny separé něco počítat
+---------------------------------------------------------                         
+
+-- pocet zabitych dle gname (teroristicke organizace)
+SELECT GNAME, -- skupina
+       SUM(NKILL) -- agregace
+FROM TEROR
+GROUP BY GNAME;
+
+SELECT 
+    gname
+    , attacktype1_txt
+    , sum(nkill)
+    , count(eventid)
+FROM teror
+GROUP BY gname, attacktype1_txt
+ORDER BY gname;
+
+-- podle gname a weaptype (druh prvni uvedene pouzite zbrane)
+SELECT GNAME, -- skupina
+       WEAPTYPE1_TXT, -- skupina 
+       SUM(NKILL), -- agregace
+       COUNT(NKILL) -- agregace
+FROM TEROR
+GROUP BY GNAME, WEAPTYPE1_TXT;
+
+SELECT
+    country_txt
+    , weaptype1_txt
+    , sum (nkill)
+    , sum (nkillter)
+    , sum(NULLIF(nhostkid, -99)) -- -99 je v tabulce použito pro unknwon hodnoty a ty potřebujeme dát pryč, protože by to měnilo výpočty
+    , sum (CASE WHEN nhostkid < 0 THEN NULL ELSE nhostkid END)
+FROM teror
+GROUP BY country_txt, weaptype1_txt
+ORDER BY country_txt, weaptype1_txt;
+
+-- UKOLY SELEKTUJU.CZ ----------------------------------------------------------
+
+// A // Zjisti počet obětí a raněných po letech a měsících
+
+SELECT 
+    iyear
+    , imonth
+    ,sum(nkill) AS pocet_obeti
+    ,sum(nwound) AS pocet_ranenych
+FROM teror
+GROUP BY iyear, imonth;
+
+
+// B // Zjisti počet obětí a raněných v západní Evropě po letech a měsících
+
+SELECT
+    region_txt
+    , iyear
+    , imonth
+    , sum(nkill) AS pocet_obeti
+    , sum(nwound) AS pocet_ranenych
+FROM teror
+WHERE region_txt = 'Western Europe'
+GROUP BY iyear, imonth, region_txt;
+
+// C // Zjisti počet útoků po zemích. Seřaď je podle počtu útoků sestupně
+
+SELECT
+    country_txt
+    ,count(eventid) AS pocet_utoku
+FROM teror
+GROUP BY country_txt
+ORDER BY pocet_utoku DESC;
+
+// D // Zjisti počet útoků po zemích a letech, seřaď je podle počtu útoků sestupně
+
+SELECT
+    country_txt
+    , iyear
+    ,count(eventid) AS pocet_utoku
+FROM teror
+GROUP BY country_txt, iyear
+ORDER BY pocet_utoku DESC;
+
+// E // Kolik která organizace spáchala útoků zápalnými zbraněmi (weaptype1_txt = 'Incendiary'), kolik při nich celkem zabila obětí, kolik zemřelo teroristů a kolik lidí bylo zraněno (nkill, nkillter, nwound)
+
+SELECT
+    gname
+    , count(eventid) AS pocet_utoku_zapalnymy_zbranemi
+    , sum(nkill) AS pocet_zabitych
+    , sum(nkillter) AS pocet_zemrelych_teroristu
+    , sum (nwound) AS pocet_zranenych
+FROM teror
+WHERE weaptype1_txt = 'Incendiary'
+GROUP BY gname;
+
+-------------------------------------------------------------------------------
+
+
+
+---------------------------------------------------------                        
+-- HAVING - možnost zapsat podmínky ke skupinám = něco jako WHERE, ale až pro ty agregovaný skupiny
+-- Pokud agreguju a pak tam dám podmínku WHERE, tak mi to filtruje z té původní celé tabulky
+---------------------------------------------------------                         
+-- SQL query order
+
+SELECT
+    country_txt
+    , weaptype1_txt
+    , sum (nkill)
+    , sum (nkillter)
+    , sum(NULLIF(nhostkid, -99)) -- -99 je v tabulce použito pro unknwon hodnoty a ty potřebujeme dát pryč, protože by to měnilo výpočty
+    , sum (CASE WHEN nhostkid < 0 THEN NULL ELSE nhostkid END)
+FROM teror
+GROUP BY country_txt, weaptype1_txt
+HAVING sum(nkill) >= 10
+ORDER BY country_txt, weaptype1_txt;
+
+--- pocet mrtvych podle teroristicke organizace kde je pocet obeti vetsi nez nula
+SELECT 
+    gname
+    , SUM(nkill) AS pocet_mrtvych 
+FROM teror 
+GROUP BY gname 
+HAVING SUM(nkill) > 0 
+ORDER BY pocet_mrtvych DESC; 
+
+--- pocet mrtvych podle teroristicke organizace kde je pocet obeti a pocet mrtvych teroristu vetsi nez nula
+SELECT 
+    gname
+    , SUM(nkill) AS pocet_mrtvych
+    , SUM(nkillter) AS pocet_mrtvych_teroristu 
+FROM teror 
+GROUP BY gname 
+HAVING SUM(nkill) > 0 
+   AND SUM(nkillter) > 0 
+ORDER BY SUM(nkill) DESC; 
+
+
+
+
+-- UKOLY SELEKTUJU.CZ ----------------------------------------------------------
+
+// F // Stejné jako E, jen ve výsledném výpisu chceme jen organizace, které zápalnými útoky zranily 50 a více lidí a nechceme tam vidět “organizaci” Unknown
+
+
+SELECT
+    gname
+    , count(eventid) AS pocet_utoku_zapalnymy_zbranemi
+    , sum(nkill) AS pocet_zabitych
+    , sum(nkillter) AS pocet_zemrelych_teroristu
+    , sum (nwound) AS pocet_zranenych
+FROM teror
+WHERE weaptype1_txt = 'Incendiary'
+GROUP BY gname
+HAVING pocet_zranenych > 50 AND gname <> 'Unknown';
+
+// G // Vypište celkový počet útoků podle druhu zbraně weaptype1_txt, počet mrtvých, mrtvých teroristů, průměrný počet mrtvých, průměrný počet mrtvých teroristů, kolik mrtvých obětí připadá na jednoho mrtvého teroristu a kolik zraněných...
+
+SELECT weaptype1_txt, 
+       COUNT(*) AS pocet_utoku, 
+       SUM(nkill) AS pocet_obeti, 
+       SUM(nkillter) AS pocet_zabitych_teroristu, 
+       AVG(nkill) AS prumerne_obeti, 
+       AVG(nkillter) AS prumerne_zabitych_teroristu,
+       CASE  
+         WHEN sum(nkillter) <> 0 THEN sum(nkill) / sum(nkillter)
+         ELSE NULL
+       END AS pocet_obeti_na_mrtveho_teroristu,
+       CASE  
+         WHEN sum(nkillter) <> 0 THEN sum(nwound) / sum(nkillter)
+         ELSE NULL
+       END AS pocet_zranenych_na_mrtveho_teroristu
+ FROM teror GROUP BY weaptype1_txt ORDER BY COUNT(*) DESC;
+
+Př. oprav radky, kde nkill (celkovy pocet mrtvych) je NULL, kdyz nkillter je vetsi nez jedna
+SELECT 
+    IFF(nkill IS NULL, nkillter, nkill) AS opraveny_nkill
+    , NKILL
+    , nkillter
+FROM teror
+WHERE IFNULL(nkill, 0) < NKILLTER;
+
+-- Q: pouziti vice sloupcu: novy sloupec attacks_category - kategorizace utoku na '1. attacks with casualties', '2. attacks with non-fatal victims', '3. attacks with no victims' 
+
+SELECT 
+    CASE
+        WHEN(nkill > 0 OR nkillter > 0) THEN 'attacks with casualties'
+        WHEN(nwound > 0 OR nhostkid > 0) THEN 'attacks with non-fatal victims'
+        ELSE 'attacks with no victims' END AS attack_category
+        , nkill
+        , nkillter
+        , nhostkid
+        , *
+FROM teror;
+
+-- Q: pouziti vice sloupcu: novy sloupec attacks_category - kategorizace utoku na '1. attacks with casualties', '2. attacks with non-fatal victims', '3. attacks with no victims' 
+
+SELECT
+    CASE
+        WHEN NKILL > 0 OR NKILLTER > 0 THEN '1. attacks with casualties'
+        WHEN NWOUND > 0 OR NHOSTKID > 0 THEN '2. attacks with non-fatal victims'
+        WHEN IFNULL(NKILL,0) = 0 AND IFNULL(NKILLTER,0) = 0 AND IFNULL(NWOUND,0) = 0 AND IFNULL(NHOSTKID,0) = 0 THEN '3. attacks with no victims'
+        WHEN NHOSTKID = -99 THEN '4. unknown'
+        ELSE 'N/A'
+    END AS ATTACKS_CAT
+    , COUNT(*)
+    , COUNT(DISTINCT EVENTID)
+    , SUM(IFF(NKILL IS NULL, NKILLTER, NKILL)) AS SUM_NKILL
+    , SUM(NKILLTER) AS SUM_NKILLTER
+    , SUM(NWOUND) AS SUM_NWOUND
+    , SUM(IFF(NHOSTKID = -99,0,NHOSTKID)) AS SUM_NHOSTKID
+FROM TEROR
+GROUP BY ATTACKS_CAT;                   

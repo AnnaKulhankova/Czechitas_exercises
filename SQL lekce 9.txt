@@ -1,0 +1,287 @@
+--JSONY V SNOWFLAKU
+-----------------------------------------------------------------
+--use database courses;
+--use schema sch_czechita;
+--co tam mame?
+select * from snowflake_sample_data.weather.weather_14_total limit 10;
+
+--data o pocasi
+select count(1)
+from snowflake_sample_data.weather.daily_16_total;
+
+--predpovedi
+select count(1)
+from snowflake_sample_data.weather.weather_14_total;
+
+--unikatni mesta cca 190k
+select count(1), count(distinct v:city.name)
+from snowflake_sample_data.weather.daily_16_total;
+
+--unikatni mesta
+select count(1), count(distinct v:city.name)
+from snowflake_sample_data.weather.weather_14_total;
+
+
+--pojdme si udelat mensi tabulky
+create table courses.sch_czechita.w14 as
+select * from snowflake_sample_data.weather.weather_14_total
+where v:city.name = 'New York'
+and   v:city.country = 'US';
+
+create table courses.sch_czechita.d16 as
+select * from snowflake_sample_data.weather.daily_16_total
+where v:city.name = 'New York'
+and   v:city.country = 'US';
+
+
+--a jak to dostaneme ven nejak citelne?
+select v:main.temp_max temp_max_far,
+       v:main.temp_min temp_min_far,
+       cast(v:time as timestamp) time,
+       v:city.coord.lat lat,
+       v:city.coord.lon lon,
+       v:city.name
+from courses.sch_czechita.w14
+limit 10;
+
+--co s tim jde delat? ... vsechno
+select (v:main.temp_max - 273.15) * 1.8000 + 32.00 as temp_max_farenheit,
+       (v:main.temp_min - 273.15) * 1.8000 + 32.00 as temp_min_farenheit,
+       cast(v:time as timestamp) time,
+       v:city.coord.lat lat,
+       v:city.coord.lon lon,
+       v
+from courses.sch_czechita.w14
+where v:city.name = 'New York'
+and   v:city.country = 'US'
+order by time desc
+limit 10;
+
+
+--pojdme trochu hard core smerem k LATERAL FLATTEN rozhozeni pole do radku, ale postupne ;)
+--kolik mame radek z mesta Cervesina? cca 18k
+select count(1)
+from courses.sch_czechita.d16 ow
+where v:city.name = 'New York'
+and   v:city.country = 'US'
+limit 10;
+
+
+
+
+
+-- s nasi malou tabulkou uz jsme na rychlosti, na jakou jsme zvykli
+--pojdme trochu hard core smerem k LATERAL FLATTEN rozhozeni pole do radku, ale postupne ;)
+--kolik mame radek z mesta Cervesina? cca 18k
+select count(1)
+from courses.sch_czechita.d16 ow
+where v:city.name = 'New York'
+and   v:city.country = 'US'
+limit 10;
+
+--pohled na data
+select
+       v:main.temp_max temp_max_far,
+       v:main.temp_min temp_min_far,
+       cast(v:time as timestamp) time,
+       v:city.coord.lat lat,
+       v:city.coord.lon lon,
+       v
+from courses.sch_czechita.d16 ow
+where v:city.name = 'New York'
+and   v:city.country = 'US';
+
+--pohled na data
+select
+       v:main.temp_max temp_max_far,
+       v:main.temp_min temp_min_far,
+       cast(v:time as timestamp) time,
+       v:city.coord.lat lat,
+       v:city.coord.lon lon,
+       v
+from courses.sch_czechita.w14 ow
+where v:city.name = 'New York'
+and   v:city.country = 'US';
+
+
+
+--pojdme trochu hard core: LATERAL FLATTEN rozhodi pole do radku 
+select  ow.v:time::datetime         as prediction_dt,
+        ow.v:city.name              as city,
+        ow.v:city.country           as country,
+        cast(f.value:dt as timestamp) as forecast_dt,
+        f.value:temp.max              as forecast_max_k,
+        f.value:temp.min              as forecast_min_k,
+        ow.v:data                     as data,
+        f.value                       as forecast
+ from courses.sch_czechita.d16 ow, lateral flatten(input => v, path => 'data') f
+ limit 10;
+ 
+-- co se to ted stalo??
+
+
+
+
+--total peklo, pojdme dal
+with
+forecast as
+(select ow.v:time         as prediction_dt,
+        ow.v:city.name    as city,
+        ow.v:city.country as country,
+        cast(f.value:dt   as timestamp) as forecast_dt,
+        f.value:temp.max  as forecast_max_k,
+        f.value:temp.min  as forecast_min_k,
+        f.value           as forecast
+ from courses.sch_czechita.d16 ow, lateral flatten(input => v, path => 'data') f),
+
+actual as
+(select v:main.temp_max as temp_max_k,
+        v:main.temp_min as temp_min_k,
+        cast(v:time as timestamp)     as time_dt,
+        v:city.name     as city,
+        v:city.country  as country
+ from courses.sch_czechita.w14)
+
+select cast(forecast.prediction_dt as timestamp) prediction_dt,
+       actual.time_dt,
+       forecast.forecast_dt,
+       forecast.forecast_max_k,
+       forecast.forecast_min_k,
+       actual.temp_max_k,
+       actual.temp_min_k
+from actual
+left join forecast on actual.city = forecast.city and
+                      actual.country = forecast.country and
+                      date_trunc(day, actual.time_dt) = date_trunc(day, forecast.forecast_dt)
+--tady by to slo groupovat po dnech a v nich dela prumerne teploty z tech mereni a tisic dalsich kouzel
+order by forecast_dt desc, prediction_dt desc;
+
+-- UKOL1: KOLIK UNIKATNICH ZEMI V JSONU
+select count(1), count(distinct v:city.country)
+from snowflake_sample_data.weather.weather_14_total;
+
+--UKOL2: KOLIK UNIKATNICH MEST V JSONU
+ select count(1), count(distinct v:city.name)
+from snowflake_sample_data.weather.weather_14_total;
+ 
+ 
+-------------------------------------------------------------------------------------------
+----- CLONE - dobré pro testování a zkoušení skriptů než to naostro pustím 
+-------------------------------------------------------------------------------------------
+
+-- CLONE TABLE, clonovat se daji i schemata, databaze a dalsi radosti - to si ukazovat nebudeme (beztak na to jen tak mit prava nebudete :D )
+-- CLONE vytvori samostatnou kopii - zmeny v puvodni tabulce neovlivni zmeny v klonovane tabulce
+--šetří místo, protože ta tabulka tam defacto není dvakrát, ale ukládají se jen nově upravené řádky a na ty původní se díváme vlastně do té origiální tabulky
+
+DESC TABLE dummy_data;
+
+CREATE TABLE DUMMY_DATA_CLONE CLONE DUMMY_DATA;
+
+DESC TABLE DUMMY_DATA_CLONE;
+
+-- VERSUS
+CREATE TABLE dummy_data_copy AS
+SELECT * FROM dummy_data;
+-- rozdil je ve vecech, ktere tolik nevidime - jak snowflake naklada se storage, jaka metadata se kopiruji
+
+DESC TABLE dummy_data_copy;
+
+
+
+
+
+-------------------------------------------------------------------------------------------
+----- CREATE VIEW / MATERIALIZED VIEW
+-------------------------------------------------------------------------------------------
+--pouziva se napr. pro tableau, aby se userovi, ktery chce vidět napr. jen prodeje neextrahovala cela dtb pro dva grafy
+--tableau bere view stejne jako tabulku, resp. nepozna, ze je to jen view
+
+CREATE VIEW v_teror_gname_agg AS
+SELECT 
+    gname
+    , COUNT(*) AS utoky
+FROM teror
+GROUP BY gname;
+
+DESC VIEW v_teror_gname_agg;
+
+SELECT * 
+FROM v_teror_gname_agg
+ORDER BY utoky DESC;
+
+SHOW VIEWS;
+
+DROP VIEW v_teror_gname_agg;
+
+
+--- view je zavisle na datech zdrojove tabulky - prestane fungovat, kdyz puvodni tabulku zmenime
+
+CREATE OR REPLACE TABLE dummy_data_copy2 AS
+SELECT * FROM dummy_data;
+
+
+create or replace view a as 
+select * from dummy_data_copy2;
+
+create or replace view b as 
+select customer_id, product_id from dummy_data_copy2;
+
+select * from a;
+select * from b;
+alter table dummy_data_copy2 drop column product_id;
+
+select * from a;
+select * from b;
+
+
+------------ priprava dat
+create or replace table vartab2 (n number(2), v variant);
+
+insert into vartab2
+    select column1 as n, parse_json(column2) as v
+    from values (1, 'null'), 
+                (2, null), 
+                (3, 'true'),
+                (4, '-17'), 
+                (5, '123.12'), 
+                (6, '1.912e2'),
+                (7, '"Om ara pa ca na dhih"  '), 
+                (8, '[-1, 12, 289, 2188, false,]'), 
+                (9, '{ "x" : "abc", "y" : false, "z": 10} ') 
+       as vals;
+-------------
+
+-- tabulka s jsonama z minule hodiny - priklad
+SELECT * FROM vartab2;
+
+-- !! nazev view musi byt unikatni - jinak error object exists
+CREATE VIEW vartab2 AS
+SELECT * FROM vartab2;
+
+-- vytvortime view s unikatnim nazvem jako select *
+CREATE VIEW v_vartab2 AS
+SELECT * FROM vartab2;
+
+CREATE OR REPLACE VIEW v_vartab2 AS
+SELECT * FROM vartab2;
+
+-- na existujici views se muzeme podivat
+SHOW VIEWS;
+
+-- s view nakladame jako s tabulkou
+SELECT * FROM v_vartab2 ORDER BY n desc;
+
+-- zmenime pocet sloupcu v puvodni tabulce
+ALTER TABLE vartab2 DROP COLUMN v;
+
+-- error - column mismatch
+SELECT * FROM v_vartab2;
+
+-- dropneme puvodni tabulku
+DROP TABLE vartab2;
+
+-- error - object does not exist
+SELECT * FROM v_vartab2;
+
+-- drop view
+DROP VIEW v_vartab2;

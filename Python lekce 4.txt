@@ -1,0 +1,99 @@
+--Cviceni 1
+print("Anna")
+print("Praha")
+
+#Cviceni 2
+mesicni_prijem = 21*7*450
+zbytek_po_odvedeni_pausalu = mesicni_prijem*0.4
+dan = zbytek_po_odvedeni_pausalu*0.15
+vyplata=mesicni_prijem-dan
+print(vyplata)
+
+#Cviceni 3
+teploty = [[2.1, 5.2, 6.1, -0.1], [2.2, 4.8, 5.6, -1.0], [3.3, 6.5, 5.9, 1.2], [2.9, 5.6, 6.0, 0.0], [2.0, 4.6, 5.5, -1.2], [1.0, 3.2, 2.1, -2.0], [0.4, 2.7, 1.3, -2.8]]
+print("prumer_teplot:", [sum(teplot)/len(teplot) for teplot in teploty])
+
+#MODULY
+#Cviceni 4
+import sys
+hodiny = int(sys.argv[1])
+minuty = int(sys.argv[2])
+hodiny_na_minuty = hodiny*60
+celkovy_cas = hodiny_na_minuty + minuty
+print(f"{celkovy_cas}")
+
+#Cviceni 5
+import sys
+import math
+cislo = float(sys.argv[1])
+print("zaokrouhleni nahoru:", math.ceil(cislo))
+print("zaokrouhleni dolu:", math.floor(cislo))
+print("zakrouhleni normalni:", round(cislo))
+
+#Cviceni 6
+import sys
+domena = str(sys.argv[1])
+print("http://"+domena)
+
+#Cviceni 7
+import sys
+import statistics
+vstup = (sys.argv[1:])
+vstup_jako_cislo = [int(hodnoty) for hodnoty in vstup]
+prumer = statistics.mean(vstup_jako_cislo)
+median = statistics.median(vstup_jako_cislo)
+print("prumer:", prumer)
+print("median:", median)
+
+#Cviceni 9-1, 2
+casy = [12, 25, 64, 27, 15, 66, 128, 44]
+casy_do_jedne_hodiny = [cas for cas in casy if cas <= 60]
+print(casy_do_jedne_hodiny)
+
+casy_nad_hodinu = [cas for cas in casy if cas > 60]
+print([cas - 60 for cas in casy_nad_hodinu])
+
+#Cviceni 9-3
+import sys
+casy_str = sys.argv[1:]
+casy = [int(cas) for cas in casy_str]
+casy_nad_hodinu = [cas for cas in casy if cas > 60]
+print([cas - 60 for cas in casy_nad_hodinu])
+
+#Cviceni 10
+import sys
+int(sys.argv[1])
+Celsius = (int(sys.argv[1]) - 32) * 5.0/9.0
+print("Teplota v Celsius:", Celsius)
+
+#Cviceni 11
+import sys
+print(sys.argv[1].replace(" ", "_"))
+
+#Cviceni 12-1
+import random
+print(random.randint(1, 6))
+
+#Cviceni 12-2
+import random
+import sys
+argument_int = int(sys.argv[1])
+print(random.randint(1, argument_int))
+
+#Cviceni 12-3
+import random
+import sys
+argumenty_list = sys.argv[1:]
+argumenty_list_int = [int(argument)for argument in argumenty_list]
+pocet_hodu_range = range(1, argumenty_list_int[1]+1)
+pocet_hodu = list(pocet_hodu_range)
+hody = [random.randint(1, argumenty_list_int[0]) for hod in pocet_hodu]
+print(hody)
+
+#Cviceni 13
+import random
+barvy = ["kříže", "srdce", "piky", "káry"]
+index_barvy = random.randint(0, len(barvy)-1)
+hodnoty = [2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K", "A"]
+index_hodnoty = random.randint(0, len(hodnoty)-1)
+print("karta:", hodnoty[index_hodnoty], barvy[index_barvy])

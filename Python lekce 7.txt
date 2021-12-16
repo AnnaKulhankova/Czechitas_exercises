@@ -1,0 +1,80 @@
+Cvicení 1:
+kurz = {
+  'nazev': 'Úvod do programování',
+  'lektor': 'Martin Podloucký',
+  'konani': [
+    {
+      'misto': 'T-Mobile',
+      'koucove': [
+        'Dan Vrátil',
+        'Filip Kopecký',
+        'Martina Nemčoková'
+      ],
+      'ucastnic': 30
+    },
+    {
+      'misto': 'MSD IT',
+      'koucove': [
+        'Dan Vrátil',
+        'Zuzana Tučková',
+        'Martina Nemčoková'
+      ],
+      'ucastnic': 25
+    },
+    {
+      'misto': 'Škoda DigiLab',
+      'koucove': [
+        'Dan Vrátil',
+        'Filip Kopecký',
+        'Kateřina Kalášková'
+      ],
+      'ucastnic': 41
+    }
+  ]
+}
+1. print(kurz['konani'][2]['ucastnic'])
+2. print(kurz['konani'][0]['koucove'][2])
+3. print(len(kurz['konani']))
+4. mista = [misto['misto'] for misto in kurz['konani']]
+print(mista)
+#pomocí FOR cyklu
+for misto in kurz['konani']:
+  print(misto['misto'])
+
+#Cvičení 4:
+import requests
+import json
+response = requests.get('http://api.kodim.cz/python-data/people')
+data = json.loads(response.text)
+response.close()
+#1
+print(len(data[0:]))
+#2
+print(data[0].keys())
+#3
+muzu = 0
+zen = 0
+for clovek in data:
+  if clovek['gender'] == "Male":
+    muzu += 1
+  if clovek['gender'] == "Female":
+    zen += 1
+print(f"muzu: {muzu}, zen: {zen}")
+
+#Cviceni 5-1
+import requests
+import json
+response = requests.get('http://svatky.adresa.info/json')
+svatky = json.loads(response.text)
+print(svatky[0]['name'])
+
+#Cviceni 5-2
+import requests
+import json
+import sys
+datum = sys.argv[1]
+html = ['http://svatky.adresa.info/json?date', datum]
+adresa = "=".join(html)
+response = requests.get(adresa)
+svatky2 = json.loads(response.text)
+print(svatky2[0]['name'])

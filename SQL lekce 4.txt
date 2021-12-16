@@ -1,0 +1,251 @@
+--- LEKCE 4: JOINY
+------------------------------------------------------------------------------------------------------------------
+-- Nove tabulky: TEROR2, COUNTRY, ATTACKTYPE, WEAPTYPE
+
+-- Základní JOIN (podle numeric)
+---------------------------------------------------------
+-- Q: napojeni ciselniku country na tabulku teror2 - vsechny sloupce (bez aliasu) - JAKY TYP JOINU SE HODI PRO TENTO CISELNIK?
+
+SELECT
+    *
+FROM teror2
+LEFT JOIN country
+ON teror2.country = country.id;
+
+-- Q: napojeni ciselniku country na tabulku teror2 - vse z jedne tabulky, pouze vybrane sloupce z druhe tabulky (s aliasy tabulek, AS)
+
+SELECT
+    t2.*
+    , c.name
+FROM teror2 AS T2
+LEFT JOIN country as C
+ON t2.country = c.id;
+
+-- Q: napojeni ciselniku country na tabulku teror2 - pouze vybrane sloupce z obou tabulek (s aliasy tabulek, AS)
+
+SELECT 
+    T2.eventid
+    , C.name AS country_name
+FROM teror2 AS T2
+LEFT JOIN country as C
+ON t2.country = c.id;
+
+-- Q: kdyz data nejsou spravne - napojeni ciselniku country_dirtydata na tabulku teror2
+-- Check pred joinem, jestli nemam nejaka data vickrat
+SELECT 
+    id, 
+    COUNT(*) 
+FROM country_dirtydata
+GROUP BY id
+HAVING COUNT(*) > 1;
+
+--------------------------------------------------------                        
+-- Základní JOIN (jde to i pres stringy)
+---------------------------------------------------------                        
+-- Q: napojeni naopak - pres text: napojeni ciselniku country na tabulku teror pomoci nazvu zeme
+SELECT 
+    c.name
+ FROM teror as t
+ LEFT JOIN country as c
+ ON t.country_txt = c.name;
+
+---------------------------------------------------------                        
+-- Základní JOIN (vice tabulek)
+---------------------------------------------------------
+-- Q: napojeni ciselniku attacktype na tabulku teror2 - 3x pro kazdy sloupecek utoku (attacktype1, attacktype2, attacktype3)
+SELECT
+    T.ATTACKTYPE1
+    , T.ATTACKTYPE2
+    , T.ATTACKTYPE3
+    , AT1.NAME AS ATTACKTYPE_1_NAME
+    , AT2.NAME AS ATTACKTYPE_2_NAME
+    , AT3.NAME AS ATTACKTYPE_3_NAME
+FROM TEROR2 AS T
+LEFT JOIN ATTACKTYPE AS AT1
+ON T.ATTACKTYPE1 = AT1.ID
+LEFT JOIN ATTACKTYPE AS AT2
+ON T.ATTACKTYPE2 = AT2.ID
+LEFT JOIN ATTACKTYPE AS AT3
+ON T.ATTACKTYPE3 = AT3.ID
+WHERE T.ATTACKTYPE3 IS NOT NULL;
+
+-- UKOLY ----------------------------------------------------------
+-- 1. napiste join, ktery napoji ciselnik weaptype na sloupce weaptype1, weaptype2 a weaptype3 (stejne jako attacktype v predchozim prikladu - LEFT JOIN), vypiste nejdrive sloupecky s nazvy zbrani z ciselniku, z teroru vsechny sloupecky
+SELECT
+    W1.name AS weaptype_name1
+    , W2.name AS weaptype_name2
+    , W3.name AS weaptype_name3
+    , T.*
+FROM teror2 AS T
+LEFT JOIN weaptype AS W1
+ON T.weaptype1 = W1.id
+LEFT JOIN weaptype AS W2
+ON T.weaptype2 = W2.id
+LEFT JOIN weaptype AS W3
+ON T.weaptype3 = W3.id;
+
+--- 2. Vyberte pouze utoky, kde byly pouzity tri ruzne typy zbrani
+
+SELECT
+    W1.name AS weaptype_name1
+    , W2.name AS weaptype_name2
+    , W3.name AS weaptype_name3
+    , T.*
+FROM teror2 AS T
+LEFT JOIN weaptype AS W1
+ON T.weaptype1 = W1.id
+LEFT JOIN weaptype AS W2
+ON T.weaptype2 = W2.id
+LEFT JOIN weaptype AS W3
+ON T.weaptype3 = W3.id
+WHERE weaptype_name2 IS NOT NULL AND weaptype_name3 IS NOT NULL;
+
+--- 2-A. POMOCI INNER JOIN -- Zde nemusíme dávat podmínku where weaptype 2 a 3 IS NOT NULL
+SELECT
+    W1.name AS weaptype_name1
+    , W2.name AS weaptype_name2
+    , W3.name AS weaptype_name3
+    , T.*
+FROM teror2 AS T
+INNER JOIN weaptype AS W1
+ON T.weaptype1 = W1.id
+INNER JOIN weaptype AS W2
+ON T.weaptype2 = W2.id
+INNER JOIN weaptype AS W3
+ON T.weaptype3 = W3.id;
+
+---------------------------------------------------------                        
+-- JOIN a WHERE - dalsi priklad
+---------------------------------------------------------                        
+-- Q: opet napojime ciselnik country na tabulku teror2, dale ciselnik attacktype pro sloupecek attacktype1, filtrujeme pouze zemi 'Czech Republic', roky 2015-2016 a attacktype1 'Facility/Infrastructure Attack'
+SELECT
+    atc.name
+    , T.iyear
+    , C.name
+FROM teror2 AS T
+LEFT JOIN country AS C
+ON t.country = c.id
+LEFT JOIN attacktype AS ATC
+ON t.attacktype1 = atc.id
+WHERE c.name = 'Czech Republic' AND (t.iyear BETWEEN 2015 AND 2016) AND atc.name ILIKE 'Facility/Infrastructure Attack';
+
+---------------------------------------------------------                        
+-- JOIN a GROUP BY
+---------------------------------------------------------
+-- Q: chceme zjistit, pro jake typy zbrani (weaptype1) bylo provedeno vice nez 1000 utoku
+
+SELECT 
+    W.name
+    , COUNT(w.name) AS pocet_utoku
+FROM teror2 AS T
+LEFT JOIN weaptype AS W
+ON t.weaptype1 = W.id
+GROUP BY w.name
+HAVING pocet_utoku > 1000;
+
+------------------------------------------------------------------------------------------------------------------
+-- UKOLY Z LEKCE 4 (SELEKTUJU.CZ)
+------------------------------------------------------------------------------------------------------------------
+//A / Vypiš eventdate, gname, nkill, nwound z tabulky teror2 (!) a přes sloupeček country připoj zemi z tabulky country
+
+SELECT
+    T.eventdate
+    , T.gname
+    , T.nkill
+    , T.nwound
+    , c.name AS country_name
+FROM teror2 AS T
+LEFT JOIN country AS C
+ON T.country = c.id;
+                        
+//B / Vypiš eventdate, gname, nkill, nwound z tabulky teror2 (!) a
+//přes sloupecek country pripoj zemi z tabulky country
+//přes sloupecek weaptype1 připoj nazev zbrane z tabulky weaptype
+//přes sloupecek weaptype2 připoj nazev zbrane z tabulky weaptype
+
+SELECT 
+    t.eventdate
+    , t.gname
+    , t.nkill
+    , t.nwound
+    , c.name AS country_name
+    , w1.name AS weapon_type1
+    , w2.name AS weapon_type2
+FROM teror2 AS t
+LEFT JOIN country AS c
+ON t.country = c.id
+LEFT JOIN weaptype AS W1
+ON t.weaptype1 = w1.id
+LEFT JOIN weaptype AS W2
+ON t.weaptype2 = w2.id;
+
+//C / Vypis eventdate, gname, nkill, nwound z tabulky teror2 (!) a
+//pres sloupecek country připoj zemi z tabulky country
+//pres sloupecek weaptype1 připoj nazev zbrane z tabulky weaptype
+//pres sloupecek weaptype2 připoj nazev zbrane z tabulky weaptype
+//vypis jen utoky jejichz sekundarni zbran byla zapalna ('Incendiary')
+
+SELECT 
+    t.eventdate
+    , t.gname
+    , t.nkill
+    , t.nwound
+    , c.name AS country_name
+    , w1.name AS weapon_type1
+    , w2.name AS weapon_type2
+FROM teror2 AS t
+LEFT JOIN country AS c
+ON t.country = c.id
+LEFT JOIN weaptype AS W1
+ON t.weaptype1 = w1.id
+LEFT JOIN weaptype AS W2
+ON t.weaptype2 = w2.id
+WHERE weapon_type2 ILIKE 'Incendiary';
+                          
+                        
+//D / Z tabulky teror2 vypis pocet utoku, pocty mrtvych a ranenych v roce 2016 -- podle pouzitych zbrani (WEAPTYPE1)
+
+SELECT 
+    COUNT(T.eventid) as pocet_utoku
+    , SUM(T.nkill) AS pocet_mrtvych
+    , SUM(T.nwound) AS pocet_ranenych
+    , w.name AS weapon_type
+FROM teror2 AS T
+LEFT JOIN weaptype AS W
+ON t.weaptype1 = w.id
+WHERE t.iyear = 2016
+GROUP BY weapon_type;
+                      
+//E / Vypiste pocet unesenych lidi (kdy byl typ utoku unos rukojmich) a pocet udalosti podle regionu a roku. Vysledek seradte podle poctu unesenych lidi sestupne. Sloupecky pojmenujte region, rok, pocet_unesenych, pocet_udalosti
+
+SELECT 
+    iyear
+    ,COUNT(EVENTID) AS Pocet_udalosti
+    ,SUM(NHOSTKID) AS POCET_UNESENYCH
+    , RG.NAME AS REGION
+FROM TEROR2 AS R
+JOIN ATTACKTYPE AS AT
+ON R.ATTACKTYPE1 = AT.ID
+JOIN REGION AS RG
+ON R.REGION = RG.ID
+WHERE AT.NAME ILIKE '%Hostage Taking%' AND NHOSTKID > 0
+GROUP BY iyear, RG.NAME, AT.NAME
+order by pocet_unesenych desc;
+
+                     
+//F / Zjistí počty útoků z tabulky teror2 po letech a kontinentech. Tj. napoj sloupecek region z tabulky teror2 na tabulku region a vytvoř sloupeček kontinent z nazvu regionu a podle něj a podle roku tabulku "zgrupuj" (zagreguj).
+SELECT 
+    COUNT(EVENTID)
+    ,CASE 
+        WHEN R.NAME ILIKE '%AMERICA%' THEN 'AMERIKA'
+        WHEN R.NAME ILIKE '%EUROPE%' THEN 'EVROPA'
+        WHEN R.NAME ILIKE '%AFRICA%' THEN 'AFRIKA'
+        WHEN R.NAME ILIKE '%Australasia%' THEN 'AUSTRALIE'
+        WHEN R.NAME ILIKE '%ASIA%' THEN 'ASIE'
+        ELSE R.NAME
+       END AS CONTINENT
+    , IYEAR
+FROM TEROR2 AS T
+LEFT JOIN REGION AS R
+ON T.REGION = R.ID
+GROUP BY CONTINENT, IYEAR;

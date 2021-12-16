@@ -1,0 +1,18 @@
+import csv
+import sys
+delici_hodnota = int(sys.argv[1])
+with open('netflix_titles.csv', 'r', encoding = 'utf-8') as netflix_titles:
+    reader = csv.reader(netflix_titles, delimiter=',')
+    titles = list(reader)
+netflix_titles.close()
+short_tsv = open('shorts.tsv', 'w', encoding = 'utf-8')
+long_tsv = open('longs.tsv', 'w', encoding='utf-8')
+for casy in titles:
+  if casy[9].endswith("min"):
+    casy_int = int(casy[9].replace("min", ""))
+    if casy_int < delici_hodnota:
+      shorts = "\t".join(casy)
+      short_tsv.write(shorts+'\n')
+    else:
+      longs = "\t".join(casy)
+      long_tsv.write(longs+'\n')

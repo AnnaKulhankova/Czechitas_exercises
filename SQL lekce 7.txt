@@ -1,0 +1,363 @@
+-- LEKCE 7: UNION, WINDOW FCE
+------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------                        
+-- UNION, UNION ALL
+---------------------------------------------------------   
+-- UNION operator spoji tabulky pod sebe (na rozdil od joinu, ktery je poji vedle sebe)
+--funguje jako ctrl+c a ctrl+v
+--typicky use case - nekde tabulky po mesicich a my je chceme spojit do jedne tabulky
+--nazvy sloupcu se propisuji z prvniho selectu!
+-- tabulky musi mit stejnou strukturu (stejne sloupce a stejne poradi sloupcu) - muzeme si tabulku upravit v selectu a pokud napriklad v jedne tabulce chybi sloupec, muzeme si ho vytvorit (a dosadit nejakou defaultni hodnotu)
+-- UNION vs UNION ALL - delaji to same, ale prikaz bez ALL kontroluje duplicitni radky (stejne hodnoty ve vsech sloupcich)
+--dobrý sloupcům dat datove typy, nekdy automaticky priradi cislum datovy typ float a rve to, ze to nechce spojit
+-- Ukazka na dummy datech
+-- Tabulka 1:
+SELECT 
+    1 AS TAB1_PRVNI_SLOUPEC
+    , 1 AS TAB1_DRUHY_SLOUPEC
+;
+-- Tabulka 2:
+SELECT
+    2 AS TAB2_PRVNI_SLOUPEC
+    , 2 AS TAB2_DRUHY_SLOUPEC
+;
+-- spojime dohromady pomoci UNION
+SELECT 
+    1 AS TAB1_PRVNI_SLOUPEC
+    , 1 AS TAB1_DRUHY_SLOUPEC
+UNION --ALL
+SELECT
+    2 AS TAB2_PRVNI_SLOUPEC
+    , 2 AS TAB2_DRUHY_SLOUPEC
+;
+-- spojime stejne hodnoty pod sebe (potreba dat UNION ALL, aby se neodfiltrovaly duplicitni hodnoty)
+SELECT 
+    1 AS TAB1_PRVNI_SLOUPEC
+    , 1 AS TAB1_DRUHY_SLOUPEC
+UNION ALL
+SELECT 
+    1 AS TAB1_PRVNI_SLOUPEC
+    , 1 AS TAB1_DRUHY_SLOUPEC
+;
+-- muzeme jich pod sebe napsat kolik chceme
+SELECT 
+    1 AS TAB1_PRVNI_SLOUPEC
+    , 2 AS TAB1_DRUHY_SLOUPEC
+UNION
+SELECT 
+    5 AS TAB1_PRVNI_SLOUPEC
+    , 6 AS TAB1_DRUHY_SLOUPEC
+UNION
+SELECT 
+    7 AS TAB1_PRVNI_SLOUPEC
+    , 8 AS TAB1_DRUHY_SLOUPEC
+UNION
+SELECT 
+    9 AS TAB1_PRVNI_SLOUPEC
+    , 10 AS TAB1_DRUHY_SLOUPEC
+;
+-- Priklad na tabulce TEROR
+---------------------------
+-- Chceme vytvorit ciselnik weaptype z tabulky TEROR. 
+-- Cislo pro weaptype je obsazen ve trech sloupcich: WEAPTYPE1, WEAPTYPE2, WEAPTYPE3
+    -- Popis pro weaptype je obsazen ve trech sloupcich: WEAPTYPE1_TXT, WEAPTYPE2_TXT, WEAPTYPE3_TXT
+
+SELECT 
+    WEAPTYPE1 AS ID_ZBRANE
+    , WEAPTYPE1_TXT AS NAZEV_ZBRANE
+FROM TEROR
+WHERE WEAPTYPE1 IS NOT NULL
+UNION
+SELECT
+    WEAPTYPE2
+    , WEAPTYPE2_TXT
+FROM TEROR
+WHERE WEAPTYPE2 IS NOT NULL
+UNION
+SELECT
+    WEAPTYPE3
+    , WEAPTYPE3_TXT
+FROM TEROR
+WHERE WEAPTYPE3 IS NOT NULL
+ORDER BY ID_ZBRANE;
+
+-- AGREGACE:
+--> chceme vedet, kolikrat se zbran objevila v utocich
+-- UNION ALL - bez promazani duplicit
+-- spojime hodnoty pouze tam, kde neni NULL hodnota
+--> do vnorene query a zagregovat cele
+
+SELECT 
+    NAZEV_ZBRANE
+    ,COUNT(*) AS POCET_POUZITI
+FROM
+(SELECT 
+    WEAPTYPE1 AS ID_ZBRANE
+    , WEAPTYPE1_TXT AS NAZEV_ZBRANE
+FROM TEROR
+WHERE WEAPTYPE1 IS NOT NULL
+UNION ALL
+SELECT
+    WEAPTYPE2
+    , WEAPTYPE2_TXT
+FROM TEROR
+WHERE WEAPTYPE2 IS NOT NULL
+UNION ALL
+SELECT
+    WEAPTYPE3
+    , WEAPTYPE3_TXT
+FROM TEROR
+WHERE WEAPTYPE3 IS NOT NULL)
+GROUP BY NAZEV_ZBRANE
+ORDER BY POCET_POUZITI DESC;
+
+-- UKOLY ----------------------------------------------------------
+--> 1. Vytvořte z tabulky TEROR číselník pro ATTACKTYPE.
+SELECT
+    ATTACKTYPE1 AS ID_UTOKU
+    , ATTACKTYPE1_TXT AS TYP_UTOKU
+FROM TEROR
+UNION
+SELECT
+    ATTACKTYPE2
+    , ATTACKTYPE2_TXT
+FROM TEROR
+UNION
+SELECT
+    ATTACKTYPE3
+    , ATTACKTYPE3_TXT
+FROM TEROR
+ORDER BY ID_UTOKU;
+------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------                        
+-- WINDOW FUNKCE (ANALYTIC)
+---------------------------------------------------------  
+-- sikovne funkce, kdyz chceme provadet vypocty v ramci urciteho okna, ktere je definovane 0-n sloupci, nektere funkce vyzaduji razeni
+-- umi se divat do jinych radku
+---- scalar x aggregate x window
+--------------------------------
+-- SCALAR - transformuje kazdou radku zvlast, nemeni strukturu tabulky
+-- AGGREGATE - agreguje data - napr. z nekolika radek vrati jednu, meni strukturu tabulky
+
+-- WINDOW - take umi agregovat data, ale nemeni strukturu tabulky, krome agregaci umi napriklad cislovat, kumulativni soucet, koukat se do predesleho radku, ... 
+
+-- SYNTAX: <function> ( [ <arguments> ] ) OVER ( [ PARTITION BY <expr1> ] [ ORDER BY <expr2> ] )
+--> i kdyz funkce nema argumenty ani nevyuziva partition by/order by, piseme vzdy: funkce() OVER ()
+-- COUNT(*) OVER ()
+---- Agregacni funkce jako window funkce
+
+---------------------------------------
+-- vsechny agregacni funkce, co jsme se ucily se daji napsat jako window fce
+-- COUNT() OVER (), SUM() OVER (), MAX() OVER (), MIN() OVER (), AVG() OVER ()
+
+SELECT 
+    COUNT(*) OVER () AS POCET_UTOKU_CELKEM
+    , *
+FROM TEROR;
+
+-- UKOLY ----------------------------------------------------------
+--> 1. Spočítejte pomocí window funkce celkový součet zabitých obětí (SUM) a průměr zabitých obětí (AVG) za celý dataset (= dosaďte do každé řádky). 
+    -- Vypište jako první dva nové sloupečky (výsledky window funkcí), následně NKILL a za ně všechny sloupečky z tabulky.
+    
+SELECT 
+    SUM(NKILL) OVER () AS POCET_OBETI
+    , AVG(NKILL) OVER () AS PRUMER_OBETI
+    , *
+FROM TEROR;
+------------------------------------------------------------------
+---- PARTITION BY
+-----------------
+-- definuje okno
+
+SELECT 
+    COUNT(*) OVER (PARTITION BY IYEAR) AS POCET_UTOKU_CELKEM_DANY_ROK
+    , *
+FROM TEROR;
+
+-- okno definovane datem -> 1461 oken (DATE_FROM_PARTS(IYEAR,IMONTH,IDAY))
+
+SELECT 
+    COUNT(*) OVER (PARTITION BY DATE_FROM_PARTS(IYEAR, IMONTH, IDAY)) AS POCET_UTOKU_V_DANY_DEN
+    , *
+FROM TEROR;
+
+-- okno definovane vice sloupecky: datum + zeme -> cca 20k oken
+
+SELECT 
+    COUNT(*) OVER (PARTITION BY DATE_FROM_PARTS(IYEAR, IMONTH, IDAY), COUNTRY_TXT) AS POCET_UTOKU_V_DANY_DEN_A_ZEMI
+    , *
+FROM TEROR;
+
+---- ORDER BY
+-------------
+-- neco jako podokno, seradi vysledek a funkce se aplikuje postupne (narozdil od partition by ale neresetuje vypocet)
+-- serazeni probiha pri vyhodnocovani window fce - neni to to stejne, jako ORDER BY ktery uz zname
+
+SELECT
+    COUNT(*) OVER (ORDER BY EVENTID)
+    , *
+FROM TEROR;
+
+-- prochazi radky a pripocitava za kazdy radek - zde spocte pocet utoku v dany den a u dalsiho radku je k predchozimu cislu pricte
+SELECT 
+    COUNT(*) OVER (ORDER BY DATE_FROM_PARTS(IYEAR, IMONTH, IDAY)) AS POCET_UTOKU_V_DANY_DEN
+    , *
+FROM TEROR
+ORDER BY POCET_UTOKU_V_DANY_DEN;
+
+-- podle toho se pak da super filtrovat a mazat duplicity
+
+---- QUALIFY: FILTROVANI VYSLEDKU WINDOW FUNKCE
+-- neco jako HAVING pro agregovane funkce
+-----------------------------------------------
+-- chci se podivat na utoky pouze z let, kde bylo alespon 14 tisic utoku
+SELECT
+    COUNT(*) OVER (PARTITION BY IYEAR) AS pocet_utoku_celkem_dany_rok
+    , *
+FROM TEROR
+QUALIFY pocet_utoku_celkem_dany_rok >= 14000
+ORDER BY IYEAR, EVENTID;
+-- QUALIFY je nadstavba, neni to SQL standard, poradime si bez QUALIFY?
+
+SELECT *
+FROM (
+SELECT
+    COUNT(*) OVER (PARTITION BY IYEAR) AS pocet_utoku_celkem_dany_rok
+    , *
+FROM TEROR
+ORDER BY IYEAR, EVENTID
+)
+WHERE pocet_utoku_celkem_dany_rok >= 14000;
+
+-- UKOLY ----------------------------------------------------------
+--> 1. Spočítejte kumulativní součet zabitých obětí (NKILL) pomocí window funkce SUM, nadefinujte okno pomocí IYEAR, okno uvnitř seřaďte pomocí DATE_FROM_PARTS(IYEAR, IMONTH, IDAY). Pojmenujte jako POCET_OBETI_KUMULATIVNE. 
+      -- Celkový výsledek seřaďte pomocí IYEAR a DATE_FROM_PARTS(IYEAR, IMONTH, IDAY). 
+      -- Vypište si pouze sloupečky POCET_OBETI_KUMULATIVNE, NKILL, EVENTID, IYEAR
+      -- Filtrujte výsledek na prvních 200 obětí kumulativně (POCET_OBETI_KUMULATIVNE bude menší nebo rovno 200) pro každý rok.
+      
+SELECT 
+    SUM(NKILL) OVER (PARTITION BY IYEAR ORDER BY DATE_FROM_PARTS(IYEAR, IMONTH, IDAY)) AS POCET_OBETI_KUMULATIVNE
+    , NKILL
+    , EVENTID
+    , IYEAR
+FROM TEROR
+QUALIFY POCET_OBETI_KUMULATIVNE <= 200
+ORDER BY POCET_OBETI_KUMULATIVNE, DATE_FROM_PARTS(IYEAR, IMONTH, IDAY);      
+      
+------------------------------------------------------------------
+---- WINDOW FUNKCE & GROUP BY
+-----------------------------
+-- muzeme kombinovat s aggregacnimi funkcemi (nejdrive se vyhodnoti group by, pak az window funkce)
+-- POZOR - je treba dat jako argument window funkce agregaci, jinak vyhodi group by error 
+-- spocitame si opet pocet utoku v kazdem roce, ale tentokrat pomoci GROUP BY, nasledne secteme agregovane pocty a vypocitame podil (%) utoku v danem roce na celkovem poctu
+
+SELECT 
+    IYEAR
+    , COUNT(*) AS POCET_UTOKU
+    , SUM(COUNT(*)) OVER ()
+    , COUNT(*)/SUM(COUNT(*)) OVER () AS PROCENTA_UTOKU
+    , RATIO_TO_REPORT(COUNT(*)) OVER () PROCENTO_UTOKU_RYCHLEJI
+FROM TEROR
+GROUP BY IYEAR;
+
+-- filtrace: 
+
+SELECT 
+    IYEAR
+    , COUNT(*) AS POCET_UTOKU
+    , SUM(COUNT(*)) OVER ()
+    , COUNT(*)/SUM(COUNT(*)) OVER () AS PROCENTA_UTOKU
+    , RATIO_TO_REPORT(COUNT(*)) OVER () PROCENTO_UTOKU_RYCHLEJI
+FROM TEROR
+GROUP BY IYEAR
+QUALIFY PROCENTA_UTOKU > 0.2;
+
+-- UKOLY ----------------------------------------------------------
+--> 1. Spočítejte, kolik jednotlivé teroristické skupiny (GNAME) měli na svědomí obětí (NKILL) - pojmenujte sloupeček POCET_OBETI (pomocí GROUP BY). Seřaďte podle počtu obětí (NULL hodnoty budou na konci).--> 2. Do stejného příkazu spočítejte celkový počet (= za celý dataset) zabitých obětí (NKILL) - vypočítejte z výsledku agregace, ne z původního sloupečku (pomocí WINDOW funkce). Přidejte také podíl zabitých (POCET_OBETI / POCET_OBETI_CELKEM) - pojmenujte jako PROCENTO_OBETI.
+--> 2. Do stejného příkazu spočítejte celkový počet (= za celý dataset) zabitých obětí (NKILL) - vypočítejte z výsledku agregace, ne z původního sloupečku (pomocí WINDOW funkce). Přidejte také podíl zabitých (POCET_OBETI / POCET_OBETI_CELKEM) - pojmenujte jako PROCENTO_OBETI.
+--> 3. Ve stejném příkazu filtrujte pouze organizace, které se na celkovém počtu obětí podílelo alespoň 10 procenty (PROCENTO_OBETI >= 0.1).
+------------------------------------------------------------------
+
+SELECT
+    GNAME
+    , SUM(NKILL) AS POCET_OBETI
+    , SUM(SUM(NKILL)) OVER () AS POCET_OBETI_CELKEM
+    , POCET_OBETI/POCET_OBETI_CELKEM AS PROCENTO_OBETI
+FROM TEROR
+GROUP BY GNAME
+QUALIFY PROCENTO_OBETI >= 0.1
+ORDER BY POCET_OBETI DESC NULLS LAST;
+
+-- DALSI WINDOW FUNKCE:
+-----------------------
+---- ROW_NUMBER()
+-----------------
+-- vyzaduje ORDER BY!!!
+-- NEW_ID --> vytvorime si nove ID v tabulce teror pomoci funkce ROW_NUMBER()
+
+SELECT 
+     ROW_NUMBER() OVER (ORDER BY EVENTID) AS NEW_ID
+     ,*
+FROM TEROR;
+
+-- pokud je nam jedno, podle ceho je to serazene, muzeme radit podle NULL
+-- ROW_NUMBER() vzdy vrati unikatni cislo (i kdyz radime podle stejne hodnoty)
+-- co kdyz pridame PARTITION BY IYEAR? U kazdeho roku pocita ID radku odznova!
+
+SELECT 
+     ROW_NUMBER() OVER (PARTITION BY IYEAR ORDER BY EVENTID) AS NEW_ID
+     ,*
+FROM TEROR
+ORDER BY IYEAR, EVENTID;
+ 
+-- maximalni hodnota pro kazdy rok bude stejna jako pocet radku v group by
+---- RANK()
+-----------
+-- vyzaduje ORDER BY
+-- poradi - napr. kdyz vyhodnocujeme nejakou soutez podle poctu ziskanych bodu apod.
+-- narozdil od ROW_NUMBER() v pripade shody v hodnote, ktera je v ORDER BY priradi stejne cislo (stejny rank = stejne poradi)
+-- Vybere seřazené organizace podle počtu obětí sestupně a přiřadí jim pořadí (rank)
+-- kombinace group by a window fce
+
+SELECT 
+    GNAME
+    ,SUM(NKILL) AS POCET_OBETI
+    ,RANK() OVER (ORDER BY POCET_OBETI DESC NULLS LAST) AS RANK
+FROM TEROR
+GROUP BY GNAME
+ORDER BY SUM(NKILL) DESC NULLS LAST;
+
+-- chceme poradi segmentovat podle roku --> pridame PARTITION BY
+--> GROUP BY GNAME, IYEAR
+--> filtrovat pouze prvni 3 kazdy rok
+
+SELECT 
+    IYEAR
+    ,GNAME
+    ,SUM(NKILL) AS POCET_OBETI
+    ,RANK() OVER (PARTITION BY IYEAR ORDER BY POCET_OBETI DESC NULLS LAST) AS RANK
+FROM TEROR
+GROUP BY GNAME, IYEAR
+QUALIFY RANK <= 3
+ORDER BY IYEAR, SUM(NKILL) DESC NULLS LAST;
+
+---------------------------------------------------------
+-- UKOLY Z LEKCE 7
+---------------------------------------------------------
+// A/ Vypiš tři největší útoky pro organizace s víc než 500 obětmi. Vypiš sloupečky city, gname a nkill a rank. Výsledek seřaď podle gname a rank
+-- pouze window funkce
+----------------------
+-- vnorena query
+----------------
+// B/ Vypiš 5 nejaktivnějších organizací (dle počtu útoků) podle regionu. Výsledek seraď podle regionu a ranku.
+---------------------------------------------------------
+-- BONUS
+---------------------------
+------- ODSTRANENI DUPLICIT
+-- NETFLIX_IMDB
+-- BONUS
+---------------------------
+------- RATIO_TO_REPORT
+-- rychly procentualni prehled

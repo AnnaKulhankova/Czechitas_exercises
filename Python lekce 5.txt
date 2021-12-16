@@ -1,0 +1,135 @@
+#Cviceni 1
+input = open('vykaz.txt', encoding = 'utf-8')
+soubor = [radek for radek in input]
+input.close()
+hodiny = [int(radek.strip()) for radek in soubor]
+import sys
+hodinova_mzda = int(sys.argv[1])
+vydelek_za_rok = sum(hodiny)*hodinova_mzda
+prumerny_mesicni_vydelek = vydelek_za_rok / 12
+print("vydelek za rok:" vydelek_za_rok, "prumer za mesic:" prumerny_mesicni_vydelek)
+
+#Cviceni 2
+input = open('slohova_prace.txt', encoding = 'utf-8')
+soubor = [radek for radek in input]
+input.close()
+radky = [radek.strip().split(" ") for radek in soubor]
+pocet_slov_na_radcich = [len(radek) for radek in radky[0:] if radek != ['']]
+celkem_slov = sum(pocet_slov_na_radcich)-1
+print(pocet_slov_na_radcich, celkem_slov)
+
+#Cviceni 3
+import sys
+input = open(sys.argv[1], encoding = 'utf-8')
+soubor = [radek for radek in input]
+input.close()
+radky = [radek.strip().split(" ") for radek in soubor]
+km_str = [radek[-1].replace(",", ".") for radek in radky]
+km_float = [float(km) for km in km_str if km != '']
+ujete_km = sum(km_float)
+print("ujete km:", ujete_km)
+
+#Cviceni 4
+pocty_dni = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+mesice = ["leden", "unor", "brezen", "duben", "kveten", "cerven", "cervenec", "srpen", "zari", "rijen", "listopad", "prosinec"]
+#cast 1
+soubor = open("kalendar.txt", "w", encoding="utf-8")
+[soubor.write(f"{den}\n") for den in pocty_dni]
+soubor.close()
+
+
+#cast 2 a 3
+soubor = open("kalendar2.txt", "w", encoding="utf-8")
+soubor.write("mesic\tdny\n")
+[soubor.write(f"{mesice[index]}\t{pocty_dni[index]}\n") for index in range(12)]
+soubor.close()
+
+#Cviceni 5
+#cast 1
+input = open('vykaz.txt', encoding = 'utf-8')
+soubor = [radek for radek in input]
+input.close()
+hodiny = [int(radek.strip()) for radek in soubor]
+import sys
+hodinova_mzda = int(sys.argv[1])
+mesicni_vydelek = [hodin*hodinova_mzda for hodin in hodiny]
+print(mesicni_vydelek)
+
+#cast 2
+input = open('vykaz.txt', encoding = 'utf-8')
+soubor = [radek for radek in input]
+input.close()
+hodiny = [int(radek.strip()) for radek in soubor]
+import sys
+hodinova_mzda = int(sys.argv[1])
+mesicni_vydelek = str([hodin*hodinova_mzda for hodin in hodiny])
+mesicni_mzda = open('mesicni_mzda.txt', 'w', encoding = 'utf-8')
+[mesicni_mzda.write(mzda) for mzda in mesicni_vydelek]
+mesicni_mzda.close()
+
+#Cviceni 6
+#cast 1
+import random
+hody_priprava = range(1, 11)
+hody = list(hody_priprava)
+hod = [random.randint(1, 12) for hod in hody]
+print(hod)
+
+#cast 2
+import random
+hody_priprava = range(1, 11)
+hody = list(hody_priprava)
+hod = [random.randint(1, 12) for hod in hody]
+hod_str = [str(hody) for hody in hod]
+hod_join = ", ".join(hod_str)
+soubor = open('hody.txt', 'w', encoding='utf-8')
+soubor.write(hod_join)
+soubor.close()
+
+#cast 3
+import random
+import sys
+pocet_hodu = int(sys.argv[1])
+hody_priprava = range(1, pocet_hodu+1)
+hody = list(hody_priprava)
+hod = [random.randint(1, 12) for hod in hody]
+hod_str = [str(hody) for hody in hod]
+hod_join = ", ".join(hod_str)
+soubor = open('hody.txt', 'w', encoding='utf-8')
+soubor.write(hod_join)
+soubor.close()
+
+#Cviceni 7-1
+vstup = open('pasazeri.txt', encoding = 'utf-8')
+pasazeri = [radek for radek in vstup]
+vstup.close()
+pondeli_str = pasazeri[0].split(" ")
+pondeli_str2 = [casy.split(",") for casy in pondeli_str]
+pondeli_tam = sum([int(pondeli_str2[0][0]), int(pondeli_str2[1][0]), int(pondeli_str2[2][0]), int(pondeli_str2[3][0])])
+pondeli_zpet = sum([int(pondeli_str2[0][1]), int(pondeli_str2[1][1]), int(pondeli_str2[2][1]), int(pondeli_str2[3][1])])
+print("tam:", pondeli_tam, "zpět:", pondeli_zpet)
+
+#Cviceni 7-2
+vstup = open('pasazeri.txt', encoding = 'utf-8')
+pasazeri = [radek.strip() for radek in vstup]
+vstup.close()
+pasazeri2 = [pocty.replace(",", " ") for pocty in pasazeri]
+pasazeri3 = [pocty.split(" ") for pocty in pasazeri2]
+vsechny_pocty = pasazeri3[0]+pasazeri3[1]+pasazeri3[2]+pasazeri3[3]+pasazeri3[4]
+vsechny_pocty_int = [int(pocty) for pocty in vsechny_pocty]
+pasazeri_tam = sum(vsechny_pocty_int[::2])
+pasazeri_zpet = sum(vsechny_pocty_int[1::2])
+print(pasazeri_tam, pasazeri_zpet)
+
+#Cviceni 8
+soubor = open('znamky.txt', encoding = 'utf-8')
+radky = [radky for radky in soubor]
+soubor.close()
+radky = [znamky.replace("1", "A") for znamky in radky]
+radky = [znamky.replace("2", "B") for znamky in radky]
+radky = [znamky.replace("3", "C") for znamky in radky]
+radky = [znamky.replace("4", "D") for znamky in radky]
+radky = [znamky.replace("5", "F") for znamky in radky]
+radky = [radky.replace("Příjmení\tJméno\tTest A\tTest B\tTest C\tTest D\tTest F", "Příjmení\tJméno\tTest 1\tTest 2\tTest 3\tTest 4\tTest 5") for radky in radky]
+soubor2 = open('opravene_znamky.txt', 'w', encoding = 'utf-8')
+[soubor2.write(znamky) for znamky in radky]

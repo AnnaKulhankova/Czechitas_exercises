@@ -1,0 +1,60 @@
+-- 5 - film má délku 223 minut, vypiště jeho délku v hodinách a minutách:
+>>> delka_filmu_v_hodinach = 223 // 60
+>>> zbytek = 223 % 60
+>>> delka_filmu_v_hodinach
+3   
+>>> zbytek
+43
+
+/* Cvičení 6: Vytvořte reprezentaci této tabulky pomocí seznamu seznamů. Zde existují dvě možnosti. Nejprve vytvořte seznam, který obsahuje řádky tabulky jako dvouprvkové seznamy
+ a uložte jej do proměnné radky. Poté vytvořte seznam, který obsahuje sloupce tabulky, tedy dva seznamy po deseti prvcích. Uložte jej do proměnné sloupce. */
+
+>>> radky = [2001, 7.8], [2002, 8.7], [2003, 8.2], [2004, 7.8], [2005, 7.7], [2006, 8.2], [2007, 9.1], [2008, 8.9], [2009, 8.4], [2010, 7.2]
+>>> sloupce = [2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010], [7.8, 8.7, 8.2, 7.8, 7.7, 8.2, 9.1, 8.9, 8.4, 7.2]
+
+/* Získejte teplotu na třetím řádku tabulky. */
+>>> radky[2][1]
+>>> sloupce[1][2]
+
+/* Získejte rok na pátém řádku tabulky. */
+>>> radky[4][0]
+>>> sloupce[0][4]
+
+/* Získejte poslední řádek tabulky jako seznam. */
+>>> radky[9][0:]
+alternativne: >>>radky[len(radky)-1]
+>>>[sloupce[0][-1]], sloupce[1][-1]]
+
+/* Vytvořte tabulku bez prvních dvou řádků. */
+>>>radky[2:]
+>>>[sloupce[0][2:], sloupce[1][-1]]
+
+-- Vytvořte tabulku pouze z prvních dvou řádků.
+>>>radky[:2]
+>>>[sloupce[0][:2], sloupce[1][:2]]
+
+-- Vytvořte tabulku obsahující jen řádky 5, 6, 7, 8.
+>>>radky[4:8]
+>>>[sloupce[0][4:8], sloupce[1][4:8]] 
+
+-- Použitím proměnné sloupce vypište seznam teplot seřazený vzestupně podle velikosti. Šlo by to i pomocí proměnné radky, ale to ještě neumíme.
+>>> sorted(sloupce[1][0:])
+[7.2, 7.7, 7.8, 7.8, 8.2, 8.2, 8.4, 8.7, 8.9, 9.1]
+
+-- 7 - Mějme proměnnou s, ve které předpokládáme uložený nějaký seznam. Sestavte v Python konzoli výraz (vzoreček), který spočítá průměrnou hodnotu v takovém seznamu. Otestujte jej na seznamech různých délek.
+>>> prumer_s = sum(s) / len(s)
+
+-- 8 - Do místnosti tvaru čtverce o rozloze 30 m2 potřebujeme koupit nový koberec. Jakou délku má mít strana koberce? Vejde se nám srolovaný do dodávky s nákladovým prostorem dlouhým 5 m?
+>>> delka_koberce = 30**0.5
+>>> delka_koberce
+5.477225575051661
+Ne nevejde, moc dlouhý.
+
+-- 9 - Postupujte obdobně jako v úložce Průměr, ale tentokrát sestavte výraz pro výpočet rozpětí, tedy rozdílu mezi minimální a maximální hodnotou.
+>>> rozpeti = max(s) - min(s)
+
+-- 10 - Prohlédněte si funkce pro práci se seznamy uvedené dříve v obsahu lekce. Představte si, že bychom neměli k dispozici funkce min() a max(). Dokázali byste vytvořit výraz, který zjistí minimální resp. maximální hodnotu v seznamu uloženém v proměnné s? Můžete v tomto vzorečku použít cokoliv, co jsme probrali na lekci kromě samotných funkcí min() a max().
+>>> minimalni_hodnota_s = sorted(s)[0]
+>>> maximalni_hodnota_s = sorted(s)[-1]
+
+-- 11 - Sestavte výraz, který vrátí číslo nacházející se přesně uprostřed v zadaném seznamu s. U seznamů liché délky je střed jasně definovaný, ovšem u seznamů sudé délky nám padne mezi dvě čísla. V takovém případě vyberte jako střed číslo blíže ke konci seznamu.

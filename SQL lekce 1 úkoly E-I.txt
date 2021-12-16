@@ -1,0 +1,39 @@
+SELECT
+ * 
+FROM
+ teror
+ WHERE
+ iyear=2016;
+SELECT 
+eventid AS udalost
+,iyear AS rok
+,country_txt AS zeme
+,region_txt AS region 
+FROM
+ teror
+ WHERE
+ iyear=2015;
+SELECT 
+CONCAT(iyear, '-', imonth, '-', iday) 
+AS 
+datum 
+FROM 
+teror 
+WHERE 
+iyear=2014;
+SELECT 
+CONCAT(iyear, '-', imonth, '-', iday)
+ AS 
+datum 
+FROM 
+teror 
+WHERE 
+iyear=2014 
+ORDER BY 
+datum DESC;
+SELECT 
+COUNT(*) 
+FROM 
+teror 
+WHERE 
+iyear>2015;

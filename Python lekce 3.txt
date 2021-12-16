@@ -1,0 +1,250 @@
+-- Cviceni 1
+>>> jmeno='Anna, Ivana'
+>>> jmeno.lower()
+'anna, ivana'
+>>> jmeno.upper()
+'ANNA, IVANA'
+
+-- Cviceni 2
+>>> hodnoty = ['12', '1', '7', '-11']
+>>> hodnoty[2]
+'7'
+>> treti_hodnota=hodnoty[2]
+>>> treti_hodnota
+'7'
+>>> vysledek=int(treti_hodnota)+4
+>>> vysledek
+11
+>>> hodnoty[2]=str(vysledek)
+>>> hodnoty
+['12', '1', '11', '-11']
+
+-- Cviceni 3
+>>> hodnoty = '12.1 1.68 7.45 -11.51'
+>>> hodnoty = '12.1 1.68 7.45 -11.51'
+>>> seznam = hodnoty.split(" ")
+>>> hodnota_fl = float(seznam[3])
+>>> vysledek = hodnota_fl + 0.25
+>>> vysledek_str = str(vysledek)
+>>> seznam[3] = vysledek_str
+>>> novy_seznam = " ".join(seznam)
+>>> hodnoty = novy_seznam
+>>> hodnoty
+'12.1 1.68 7.45 -11.26'
+
+-- Cviceni 5
+>>> cisla = [1.12, 4.51, 2.64, 13.1, 0.1]
+>>> [x*2 for x in cisla]
+[2.24, 9.02, 5.28, 26.2, 0.2]
+>>> [x*(-1) for x in cisla]
+[-1.12, -4.51, -2.64, -13.1, -0.1]
+>>> [x**2 for x in cisla]
+[1.2544000000000002, 20.3401, 6.969600000000001, 171.60999999999999, 0.010000000000000002]
+>>> [str(x) for x in cisla]
+['1.12', '4.51', '2.64', '13.1', '0.1']
+
+-- Cviceni 6
+>>> jmena = ['Roman', 'Jan', 'Miroslav', 'Petr', 'Gabriel']
+>>> [len(jmen) for jmen in jmena]
+[5, 3, 8, 4, 7]
+>>> [jmen.upper() for jmen in jmena]
+['ROMAN', 'JAN', 'MIROSLAV', 'PETR', 'GABRIEL']
+>>> [jmen+"a" for jmen in jmena]
+['Romana', 'Jana', 'Miroslava', 'Petra', 'Gabriela']
+>>> [jmen.lower() + "@email.cz" for jmen in jmena]
+['roman@email.cz', 'jan@email.cz', 'miroslav@email.cz', 'petr@email.cz', 'gabriel@email.cz']
+
+-- Cviceni 7
+>>> teploty = [
+...   [2.1, 5.2, 6.1, -0.1],
+...   [2.2, 4.8, 5.6, -1.0],
+...   [3.3, 6.5, 5.9, 1.2],
+...   [2.9, 5.6, 6.0, 0.0],
+...   [2.0, 4.6, 5.5, -1.2],
+...   [1.0, 3.2, 2.1, -2.0],
+...   [0.4, 2.7, 1.3, -2.8]
+... ]
+
+>>> prumer_teplot = [sum(teplot)/len(teplot) for teplot in teploty]
+>>> prumer_teplot
+[3.325, 2.9, 4.2250000000000005, 3.625, 2.725, 1.0750000000000002, 0.40000000000000013]
+
+>>> ranni_teploty = [teplot[0] for teplot in teploty]
+>>> ranni_teploty
+[2.1, 2.2, 3.3, 2.9, 2.0, 1.0, 0.4]
+
+>>> nocni_teploty = [teplot[3] for teplot in teploty]
+>>> nocni_teploty
+[-0.1, -1.0, 1.2, 0.0, -1.2, -2.0, -2.8]
+
+>>> denni_a_nocni_teploty = [[teplot[1], teplot[3]] for teplot in teploty]
+>>> denni_a_nocni_teploty
+[[5.2, -0.1], [4.8, -1.0], [6.5, 1.2], [5.6, 0.0], [4.6, -1.2], [3.2, -2.0], [2.7, -2.8]]
+
+>>> celkova_prumerna_teplota = sum(prumer_teplot) / len(prumer_teplot)
+
+-- Cviceni 9
+>>> veky = [35, 12, 44, 11, 18, 21, 28, 18]
+>>> zbyva_do_osmnacti = [(18 - vek) for vek in veky]
+>>> starsi = [vek < 0 for vek in zbyva_do_osmnacti]
+>>> starsi
+[True, False, True, False, False, True, True, False]
+>>> mladsi = [vek > 0 for vek in zbyva_do_osmnacti]
+>>> mladsi
+[False, True, False, True, False, False, False, False]
+
+--Cviceni 10
+>>> nazvy = [
+...   'Někdo to rád horké, extended edition',
+...   'Adéla ještě nevečeřela',
+...   'Kulový blesk'
+... ]
+>>> delky = [136, 105, 82]
+>>> delky2 = [[delka // 60, delka % 60] for delka in delky]
+>>> delky_str = [[str(delka[0]), str(delka[1])] for delka in delky2]
+>>> trvani_test = [",".join(delka) for delka in delky_str]
+>>> trvani = [delka.replace(",", ":") for delka in trvani_test]
+>>> trvani
+['2:16', '1:45', '1:22']
+
+--Cviceni 11
+>>> kraje = [
+...   ['Hlavní město Praha', '1 280 508'],
+...   ['Jihočeský kraj', '638 782'],
+...   ['Jihomoravský kraj', '1 178 812'],
+...   ['Karlovarský kraj', '296 749'],
+...   ['Kraj Vysočina', '508 952'],
+...   ['Královéhradecký kraj', '550 804'],
+...   ['Liberecký kraj', '440 636'],
+...   ['Moravskoslezský kraj', '1 209 879'],
+...   ['Olomoucký kraj', '633 925'],
+...   ['Pardubický kraj', '517 087'],
+...   ['Plzeňský kraj', '578 629'],
+...   ['Středočeský kraj', '1 338 982'],
+...   ['Ústecký kraj', '821 377'],
+...   ['Zlínský kraj', '583 698']
+... ]
+>>> nazvy_kraju = [kraj[0] for kraj in kraje]
+>>> nazvy_kraju
+['Hlavní město Praha', 'Jihočeský kraj', 'Jihomoravský kraj', 'Karlovarský kraj', 'Kraj Vysočina', 'Královéhradecký kraj', 'Liberecký kraj', 'Moravskoslezský kraj', 'Olomoucký kraj', 'Pardubický kraj', 'Plzeňský kraj', 'Středočeský kraj', 'Ústecký kraj', 'Zlínský kraj']
+
+>>> pocty = [int(pocty[1].replace(" ", "")) for pocty in kraje]
+>>> pocty
+[1280508, 638782, 1178812, 296749, 508952, 550804, 440636, 1209879, 633925, 517087, 578629, 1338982, 821377, 583698]
+
+>>> nazvy_a_pocty = [nazvy_kraju, pocty]
+>>> nazvy_a_pocty
+[['Hlavní město Praha', 'Jihočeský kraj', 'Jihomoravský kraj', 'Karlovarský kraj', 'Kraj Vysočina', 'Královéhradecký kraj', 'Liberecký kraj', 'Moravskoslezský kraj', 'Olomoucký kraj', 'Pardubický kraj', 'Plzeňský kraj', 'Středočeský kraj', 'Ústecký kraj', 'Zlínský kraj'], [1280508, 638782, 1178812, 296749, 508952, 550804, 440636, 1209879, 633925, 517087, 578629, 1338982, 821377, 583698]]
+>>>
+
+
+--Cviceni 12
+>>> hlasy = [
+...   [78774, 43179, 225111, 144799, 242854],
+...   [91062, 22451, 17475, 53391, 46450],
+...   [179186, 216499, 4493, 156305, 61222],
+...   [9619, 53476, 926, 64737, 34566],
+...   [66904, 85730, 27271, 12964, 38041],
+...   [118755, 1929, 30426, 25178, 31952],
+...   [64467, 40993, 81181, 39392, 4335],
+...   [11221, 97970, 26179, 98539, 112578],
+...   [171064, 7638, 8752, 96666, 39738],
+...   [74235, 101680, 18920, 45904, 1922],
+...   [39309, 1505, 10531, 30458, 40228],
+...   [131584, 1812, 241122, 22267, 99326],
+...   [194133, 39985, 200997, 28229, 20780],
+...   [66188, 51607, 15977, 177272, 17664]
+... ]
+>>>
+>>> #1
+>>> IG = sum([kraj[0] for kraj in hlasy])
+>>> AD = sum([kraj[1] for kraj in hlasy])
+>>> VB = sum([kraj[2] for kraj in hlasy])
+>>> OB = sum([kraj[3] for kraj in hlasy])
+>>> RK = sum([kraj[4] for kraj in hlasy])
+nebo
+kandidati = [sum([kraj[i] for kraj in hlasy]) for i in [0, 1, 2, 3, 4]]
+
+>>> #2
+>>> hlasy_celkem = kandidati
+>>> max_hlasu = max(hlasy_celkem)
+>>> index_vyherce = hlasy_celkem.index(max_hlasu)
+>>> index_vyherce
+0
+>>> seznam_kandidati = ["IG", "AD", "VB", "OB", "RK"]
+>>> vyhral = seznam_kandidati[0]
+>>> vyhral
+'IG'
+
+>>>#3
+>>> kraje = ["Praha", "Jihocesky", "Jihomoravsky", "Karlovarsky", "Vysocina", "Kralovehradecky", "Liberecky", "Moravskoslezsky", "Olomoucky", "Pardubicky", "Plzensky", "Stredocesky", "Ustecky", "Zlinsky"]
+>>> volebni_ucast = [sum(kraj) for kraj in hlasy]
+>>> max(volebni_ucast)
+734717
+>>> min(volebni_ucast)
+122031
+>>> nejvetsi_ucast = max(volebni_ucast)
+>>> nejmensi_ucast = min(volebni_ucast)
+>>> index_max = volebni_ucast.index(nejvetsi_ucast)
+>>> index_max
+0
+>>> kraje[0]
+'Praha'
+>>> index_min = volebni_ucast.index(nejmensi_ucast)
+>>> index_min
+10
+>>> kraje[10]
+'Plzensky'
+
+>>>#4
+>>> index_max_hlasy = [kraj.index(max(kraj)) for kraj in hlasy]
+
+>>>#5
+>>> kraje = [
+...   ['Hlavní město Praha', '1 280 508'],
+...   ['Jihočeský kraj', '638 782'],
+...   ['Jihomoravský kraj', '1 178 812'],
+...   ['Karlovarský kraj', '296 749'],
+...   ['Kraj Vysočina', '508 952'],
+...   ['Královéhradecký kraj', '550 804'],
+...   ['Liberecký kraj', '440 636'],
+...   ['Moravskoslezský kraj', '1 209 879'],
+...   ['Olomoucký kraj', '633 925'],
+...   ['Pardubický kraj', '517 087'],
+...   ['Plzeňský kraj', '578 629'],
+...   ['Středočeský kraj', '1 338 982'],
+...   ['Ústecký kraj', '821 377'],
+...   ['Zlínský kraj', '583 698']
+... ]
+>>> pocet_obyvatel = [int(pocty[1].replace(" ", "")) for pocty in kraje]
+>>> Praha = [round(hlas / pocet_obyvatel[0] * 100, 2) for hlas in hlasy[0]]
+Obdobně pro všech 13 krajů.
+
+>>>#6
+>>> kraje = [
+...   ['Hlavní město Praha', '1 280 508'],
+...   ['Jihočeský kraj', '638 782'],
+...   ['Jihomoravský kraj', '1 178 812'],
+...   ['Karlovarský kraj', '296 749'],
+...   ['Kraj Vysočina', '508 952'],
+...   ['Královéhradecký kraj', '550 804'],
+...   ['Liberecký kraj', '440 636'],
+...   ['Moravskoslezský kraj', '1 209 879'],
+...   ['Olomoucký kraj', '633 925'],
+...   ['Pardubický kraj', '517 087'],
+...   ['Plzeňský kraj', '578 629'],
+...   ['Středočeský kraj', '1 338 982'],
+...   ['Ústecký kraj', '821 377'],
+...   ['Zlínský kraj', '583 698']
+... ]
+>>> Praha_sum = sum([procenta for procenta in Praha])
+a obdobně pro všech třináct krajů
+>>> volebni_ucast = [Praha_sum, Jihocesky_sum, Jihomoravsky_sum...]
+>>> ucast_nad_polovinu = [ucast > 50 for ucast in volebni_ucast]
+>>> ucast_nad_polovinu
+[True, False, True...]
+
+NEBO
+>>> pocty_obyvatel = [int(kraj[1].replace(" ", "")) for kraj in kraje]
+​>>> vysoka_ucast = [sum(hlasy[i]) / pocty_obyvatel[i] > 0.5 for i in range(len(hlasy))]
+print(vysoka_ucast)

@@ -1,0 +1,50 @@
+#importuji moduly
+import csv
+import json
+from math import floor
+
+#nacitam data ze souboru netflix_titles.csv a ukladam je jako seznam
+with open('netflix_titles.csv', 'r', encoding = 'utf-8') as netflix_titles:
+    reader = csv.reader(netflix_titles, delimiter=',')
+    next(reader, None)
+    netflix = list(reader)
+
+#vytvarim seznam seznamu pouze ze sloupcu, ktere chci ve finalnim jsonu
+seznam_seznamu = [[sloupec[2], sloupec[3], sloupec[4], sloupec[10], sloupec[7]] for sloupec in netflix]
+
+#definuji klice slovniku
+dict_keys = ['title', 'directors', 'cast', 'genres', 'decade']
+
+#vytvarim seznam slovniku
+seznam_slovniku = [dict(zip(dict_keys, i)) for i in seznam_seznamu]
+
+#nastavuji podminku, aby se tam, kde je vic reziseru splitli podle carky+mezery a tam kde chybí, byl prazdny seznam
+for directors in seznam_slovniku:
+  if len(directors['directors']) >= 1:
+    directors['directors'] = directors['directors'].split(", ")
+  else:
+    directors['directors'] = []
+
+#obdobne nastavuji podminku pro cast
+for cast in seznam_slovniku:
+  if len(cast['cast']) >= 1:
+    cast['cast'] = cast['cast'].split(", ")
+  else:
+    cast['cast'] = []
+
+#splituji genres podle carky+mezery
+for genres in seznam_slovniku:
+  genres['genres'] = genres['genres'].split(", ") 
+  
+#rok vzniku prevadim na dekadu
+for decade in seznam_slovniku:
+  decade['decade'] = floor(int(decade['decade']) / 10) * 10 
+
+#oteviram json soubor k zapisu
+soubor = open('movies.json', 'w', encoding = 'utf-8')
+
+#dumpnu seznam slovniku do json souboru
+json.dump(seznam_slovniku, soubor, indent=4)
+
+#zaviram json soubor
+soubor.close()

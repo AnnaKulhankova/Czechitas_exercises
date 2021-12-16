@@ -1,0 +1,338 @@
+---------------------------------------------------------------------------------
+---- DALSI PRIKLADY S WINDOW FUNKCEMI
+---------------------------------------------------------------------------------
+----------------------------
+-- WINDOW FUNKCE & DUPLICITY
+----------------------------
+-- Nova tabulka: BABY_TEROR
+---------------------------
+-- mensi mnozstvi sloupcu, vetsi mnozstvi radku, ovsem duplicitnich
+SELECT 
+    *
+FROM BABY_TEROR;
+-- O-OU 56402 radek
+----------------------------------
+-- DUPLICITY - KONTROLA (GROUP BY)
+----------------------------------
+-- kde ty duplicity jsou - pomoci GROUP BY a HAVING (duplicita je v EVENTID)
+
+SELECT EVENTID, COUNT(EVENTID)
+FROM BABY_TEROR
+GROUP BY EVENTID
+HAVING COUNT(EVENTID)>1
+ORDER BY COUNT(EVENTID)DESC;
+
+--podivam se na radky, kde jsou duplicity pomoci joinu
+
+SELECT *
+FROM BABY_TEROR AS BT
+INNER JOIN (
+SELECT EVENTID, COUNT(EVENTID)
+FROM BABY_TEROR
+GROUP BY EVENTID
+HAVING COUNT(EVENTID)>1
+ORDER BY COUNT(EVENTID)DESC) AS DUPL
+ON BT.EVENTID = DUPL.EVENTID
+ORDER BY BT.EVENTID;
+
+----------------------------
+-- DUPLICITY - WINDOW FUNKCE
+----------------------------
+-- chci videt nezmenene radky --> zachovat strukturu tabulky (radky zustanou nezmenene)
+-- PODIVAT SE DO DAT
+-- data seradime pomoci EVENTID
+--mnohem kratsi zapis nez pomoci toho GROUP BY
+
+SELECT
+    COUNT(*) OVER (PARTITION BY EVENTID) AS DUPLICITY
+    ,*
+FROM BABY_TEROR
+QUALIFY DUPLICITY > 1
+ORDER BY EVENTID;
+
+-- DEFINOVAT DUPLICITY
+----------------------
+--ocisluji radky, rozhodnu se, ze chci ponechat pouze ty radky s nejvyssim hrozne_dulezitym_cislem --> k tomu pouziju ROW_NUMBER
+--po zakomentovani QUALIFY si zobrazim celou tabulku
+SELECT
+    COUNT(*) OVER (PARTITION BY EVENTID) AS DUPLICITY
+    ,ROW_NUMBER() OVER (PARTITION BY EVENTID ORDER BY HROZNE_DULEZITY_CISLO DESC NULLS LAST)
+    ,*
+FROM BABY_TEROR
+--QUALIFY DUPLICITY > 1
+ORDER BY EVENTID, HROZNE_DULEZITY_CISLO DESC NULLS LAST;
+
+-- FILTROVAT NADEFINOVANE DUPLICITY
+-----------------------------------
+
+SELECT
+*
+FROM BABY_TEROR
+QUALIFY ROW_NUMBER() OVER (PARTITION BY EVENTID ORDER BY HROZNE_DULEZITY_CISLO DESC NULLS LAST) = 1
+ORDER BY EVENTID, HROZNE_DULEZITY_CISLO DESC NULLS LAST;
+
+-- NOVA TABULKA BEZ DUPLICIT
+----------------------------
+CREATE TABLE BABY_TEROR_CLEAN AS
+SELECT
+*
+FROM BABY_TEROR
+QUALIFY ROW_NUMBER() OVER (PARTITION BY EVENTID ORDER BY HROZNE_DULEZITY_CISLO DESC NULLS LAST) = 1
+ORDER BY EVENTID, HROZNE_DULEZITY_CISLO DESC NULLS LAST;
+
+-- UKOLY ----------------------------------------------------------
+--> Zkuste si nadefinovat a vytvorit tabulku bez duplicit na prikladu tabulky NETFLIX_IMDB_TITLES_DUPLICITY_UKOL. Je v ni jen par radku, aby to bylo snazsi se v duplicitach zorientovat, ale ne vsechny radky maji duplicitu.
+SELECT * 
+FROM NETFLIX_IMDB_TITLES_DUPLICITY_UKOL;
+
+-- 1. ZOBRAZTE SI POUZE DUPLICITY POMOCI COUNT(*)
+-- Kouknete se na jednotlive duplicity - v cem se lisi?
+
+SELECT
+    COUNT(*) OVER (PARTITION BY SHOW_ID)
+    ,*
+FROM NETFLIX_IMDB_TITLES_DUPLICITY_UKOL
+QUALIFY COUNT(*) OVER (PARTITION BY SHOW_ID) > 1
+ORDER BY SHOW_ID;
+
+-- 2. OCISLUJTE RADKY PODLE SHOW_ID (pro kazde SHOW_ID zacne cislovat od 1) 
+-- SERADTE PODLE JEDNOHO Z NASLEDUJICICH SLOUPECKU (VYBERTE SI KTERY - JEDEN): AVERAGERATING, NUMVOTES, RUNTIMEMINUTES
+
+SELECT
+    COUNT(*) OVER (PARTITION BY SHOW_ID)
+    ,ROW_NUMBER() OVER(PARTITION BY SHOW_ID ORDER BY NUMVOTES)
+    ,*
+FROM NETFLIX_IMDB_TITLES_DUPLICITY_UKOL
+QUALIFY COUNT(*) OVER (PARTITION BY SHOW_ID) > 1
+ORDER BY SHOW_ID;
+
+-- 3. VYTVORTE NOVOU TABULKU K SOBE DO SCHEMATU JAKO NETFLIX_UKOL_DUPLICITY (CREATE TABLE VASE_SCHEMA.NETFLIX_UKOL_DUPLICITY AS SELECT ...) 
+-- JIZ BEZ DUPLICIT, pomocne sloupecky nevypisujte, ponechte pouze ty puvodni
+
+SELECT
+    *
+FROM NETFLIX_IMDB_TITLES_DUPLICITY_UKOL
+QUALIFY ROW_NUMBER() OVER(PARTITION BY SHOW_ID ORDER BY NUMVOTES) = 1
+ORDER BY SHOW_ID, NUMVOTES DESC;
+
+CREATE TABLE UKOL_CLEAN AS
+SELECT
+    *
+FROM NETFLIX_IMDB_TITLES_DUPLICITY_UKOL
+QUALIFY ROW_NUMBER() OVER(PARTITION BY SHOW_ID ORDER BY NUMVOTES) = 1;
+------------------------------------------------------------
+---------------------------
+------- LAG (DALSI WINDOW FCE)
+---------------------------
+-- predchazejici hodnota
+-- LAG(CO_MA_DOSADIT) OVER (PARTITION BY OKNO_SLOUPEC ORDER BY PORADI_SLOUPEC)
+--DEFAULTNĚ SE LAG KOUKÁ O ŘÁDEK ZPĚT, TEDY LAG(SLOUPEC, 1), ALE MŮŽU ZMĚNIT, POKUD SE BUDU CHTÍT DÁVAT DOPŘEDU, TAK -1
+--U PRVNIHO RADKU SE OBJEVI NULL, POKUD TAM NULL NECHCI - MUSIM SI NECO DOPSAT JAKO TRETI ARGUMENT FUNKCE LAG (VIZ UKOL BABY_TEROR DAL)
+-- NETFLIX_UKOL_DUPLICITY
+-------------------------
+SELECT
+    *
+FROM NETFLIX_UKOL_DUPLICITY;
+-- AVERAGERATING-PREDCHOZI_RATING AS ROZDIL_OPROTI_PREDCHOZIMU
+
+SELECT
+    LAG(AVERAGERATING) OVER (ORDER BY STARTYEAR) AS PREDCHOZI_RATING 
+    ,AVERAGERATING - PREDCHOZI_RATING AS ROZDIL_V_RATING
+    ,*
+FROM NETFLIX_UKOL_DUPLICITY;
+
+-- ANALOGIE S CASOVYMI ROZESTUPY MEZI TITLES
+
+SELECT
+    LAG(STARTYEAR) OVER (ORDER BY STARTYEAR) AS ROK_PREDCHOZIHO_FILMU
+    ,STARTYEAR - ROK_PREDCHOZIHO_FILMU AS KOLIK_UPLYNULO_LET
+    ,*
+FROM NETFLIX_UKOL_DUPLICITY;
+
+-- BABY_TEROR - LAG SE STRINGEM
+
+SELECT
+    LAG(CITY, 1, 'PRVNI UTOK') OVER (PARTITION BY COUNTRY_TXT ORDER BY EVENT_DATE, EVENTID)
+    ,*
+FROM BABY_TEROR
+ORDER BY COUNTRY_TXT, EVENT_DATE, EVENTID;
+
+------ ukooooooooooooooooooooooooooooooooooool
+-- UKOLY ----------------------------------------------------------
+--> 1. Dosadte predchozi datum (lag) utoku pro utoky v Ceske republice (PREDCHOZI_DATUM) a vypocitejte rozdil od predchoziho utoku ve dnech (ROZDIL_VE_DNECH) (pouzijte funkci DATEDIFF).
+-- dopiste window funkci do nasledujici query:
+SELECT 
+    LAG(EVENT_DATE) OVER
+    ,*
+FROM BABY_TEROR
+WHERE COUNTRY_TXT = 'Czech Republic'
+ORDER BY EVENT_DATE
+;
+------------------------------------------------------------
+-------------------------------------------------------------------------------------------
+----- SESSION VARIABLE
+--pro nastaveni parametru, ktere se opakuji a nechci to vsude vypisovat
+-------------------------------------------------------------------------------------------
+--- cislo
+SET my_number = 5;
+-- pouziti v prikazu -> $
+SELECT $my_number;
+--lze pouzit ve funkci
+SELECT DATEADD(DAY,$my_number,CURRENT_DATE());
+-- datum
+SET my_date = '2021-01-01'::DATE;
+SELECT $my_date;
+-- vic variables v jednom prikazu
+SET (var1, var2, var3) = (10, 20, 30);
+-- variables jednoduse i prepiseme
+SET (my_number, my_date) = (7, '2021-06-01'::DATE);
+SHOW VARIABLES; -- ukaze vsechny variables, ktere jsem nastavila
+-- variables mizi po ukonceni session (=zavreni snowflake okna), ale muzeme je i unsetnout
+UNSET my_number;
+UNSET my_date;
+-- pripadne vice jednim prikazem
+UNSET (var1, var2, var3);
+-- muzeme ulozit i hodnotu pomoci funkce
+SET vcera = DATEADD(day,-1,CURRENT_DATE());
+SELECT $vcera;
+-- pro nektere vyrazy to ale nefunguje
+SET dni_od_vanoc2020 = DATEDIFF(day,'2020-12-24',CURRENT_DATE());
+--> je potreba vyraz dat do subquery
+SET dni_od_vanoc2020 = (SELECT DATEDIFF(day,'2020-12-24',CURRENT_DATE()));
+SELECT $dni_od_vanoc2020;
+UNSET(vcera, dni_od_vanoc2020);
+-- pouziti?
+-- hodi se predevsim, pokud tuto hodnotu pouzijeme v ruznych queries -> v pripade, ze chceme parametry zmenit, staci v promenne
+------------------------------------------
+-- ### UKOL
+------------------------------------------
+-- Vydefinujte si promenne lower_bound = 10 a upper_bound = 100. Napiste query, ktera vypise ty utoky, kde bylo zabito od 10 do 100 obeti (vcetne) - vyuzijte nove nadefinovane promenne. Po query promenne unsetnete.
+SET lower_bound = 10;
+SET upper_bound = 100;
+
+SELECT
+   *
+FROM TEROR
+WHERE NKILL BETWEEN $lower_bound AND $upper_bound
+ORDER BY NKILL DESC;
+
+UNSET lower_bound ;
+UNSET upper_bound ;
+------------------------------------------
+-------------------------------------------------------------------------------------------
+----- PIVOT/UNPIVOT
+-------------------------------------------------------------------------------------------
+-- co uz zname - group by
+-- teror utoky ze sousednich zemi
+SELECT
+    *
+FROM TEROR
+WHERE COUNTRY_TXT IN ('Czech Republic', 'Slovakia', 'Austria', 'Germany', 'Poland')
+ORDER BY COUNTRY_TXT, ATTACKTYPE1_TXT;
+
+-- chceme zjistit, kolik je utoku pro danou zemi --> GROUP BY COUNTRY_TXT, ATTACKTYPE1_TXT
+SELECT
+    COUNTRY_TXT
+    , ATTACKTYPE1_TXT
+    , COUNT(*) AS POCET_UTOKU
+FROM TEROR
+WHERE COUNTRY_TXT IN ('Czech Republic', 'Slovakia', 'Austria', 'Germany', 'Poland')
+GROUP BY COUNTRY_TXT, ATTACKTYPE1_TXT
+ORDER BY COUNTRY_TXT, ATTACKTYPE1_TXT;
+
+-- chceme mit v KAZDEM sloupecku pocet pro JEDNOTLIVE ZEME
+-- A/ uz zname zpusob -- COUNT + CASE WHEN -- mnohem lepsi nez SF funkce PIVOT
+
+SELECT 
+    ATTACKTYPE1_TXT
+    ,COUNT(CASE WHEN COUNTRY_TXT = 'Czech Republic' THEN EVENTID END) AS POCET_UTOKU_CR
+    ,COUNT(CASE WHEN COUNTRY_TXT = 'Slovakia' THEN EVENTID END) AS POCET_UTOKU_SLOVENSKO
+    ,COUNT(CASE WHEN COUNTRY_TXT = 'Austria' THEN EVENTID END) AS POCET_UTOKU_RAKOUSKO
+    ,COUNT(CASE WHEN COUNTRY_TXT = 'Germany' THEN EVENTID END) AS POCET_UTOKU_NEMECKO
+    ,COUNT(CASE WHEN COUNTRY_TXT = 'Poland' THEN EVENTID END) AS POCET_UTOKU_POLSKO
+FROM TEROR
+WHERE COUNTRY_TXT IN ('Czech Republic', 'Slovakia', 'Austria', 'Germany', 'Poland')
+GROUP BY ATTACKTYPE1_TXT
+ORDER BY ATTACKTYPE1_TXT;
+
+-- POKUD TO NEKDO PRASECIL POMOCI PIVOT A POTREBUJU TO UNPIVOTNOUT, TAK LZE POMOCI UNION ALL -- SLOUPCE SI SPOJIM POD SEBE
+
+SELECT
+    ATTACKTYPE1_TXT
+    , 'Czech Republic' AS COUNTRY_TXT
+    , CZECH_REPUBLIC AS POCET_UTOKU
+FROM cust_pivot
+UNION ALL
+SELECT
+    ATTACKTYPE1_TXT
+    , 'Austria' AS COUNTRY_TXT
+    , AUSTRIA AS POCET_UTOKU
+FROM cust_pivot
+UNION ALL
+SELECT
+    ATTACKTYPE1_TXT
+    , 'Slovakia' AS COUNTRY_TXT
+    , Slovakia AS POCET_UTOKU
+FROM cust_pivot
+UNION ALL
+SELECT
+    ATTACKTYPE1_TXT
+    , 'Germany' AS COUNTRY_TXT
+    , Germany AS POCET_UTOKU
+FROM cust_pivot
+;
+
+-----------------------------------------------------------------------------------------
+----- UNIFORM, GENERATOR
+-- funkce, ktere vraci nahodna data
+-------------------------------------------------------------------------------------------
+----------------- 
+-- UNIFORM(min,max,generator)
+-- random cislo z uniformni distribuce = kazde cislo ma stejnou pravdepodobnost vyberu
+--bere min a max vcetne
+SELECT 
+    UNIFORM(50,100,RANDOM()); --> vzdy random cislo
+
+-- RANDSTR(length,generator)
+SELECT RANDSTR(9,RANDOM());
+
+-- GENERATOR jako table function (=naplneni tabulky)
+-- ROWCOUNT VS TIMELIMIT
+SELECT 
+    1                               -- cim chci, aby byly radky naplneny
+FROM 
+TABLE(generator(rowcount => 10)); -- kolik chci vygenerovat radku
+
+SELECT 
+    1 
+FROM 
+TABLE(generator(timelimit => 0.1)); -- lze omezit i casem, kterym se tabulka generuje
+
+SELECT 
+    UNIFORM(50,100,RANDOM()) 
+FROM TABLE(GENERATOR(ROWCOUNT => 50));
+
+SELECT 
+    ROW_NUMBER() OVER (ORDER BY NULL) 
+FROM TABLE(GENERATOR(ROWCOUNT => 50));
+
+--pro vytvoreni casove rady - casto se pouziva
+
+SELECT
+    ROW_NUMBER() OVER (ORDER BY NULL) AS POCET_DNI
+    ,DATEADD(DAY, -1, CURRENT_DATE())
+    ,DATEADD(DAY, POCET_DNI, DATEADD(DAY, -1, CURRENT_DATE()))
+FROM TABLE(GENERATOR(ROWCOUNT => 20));
+
+-- da se to napsat i cele do jednoho sloupecku
+------------------------------------------
+-- ### UKOL
+------------------------------------------
+-- Vygenerujte si data od '2016-01-01' do '2016-12-31', tentokrat pomoci session variables.
+-- Definujte si variable period_start a period_end, 
+-- Pomoci techto variables si definujte dalsi variable num_days (=pocet dni v roce), kterou spocitate pomoci (select datediff()) (pozor, k datediff je potreba pricist jednicku, aby se vam vygenerovaly vsechny data)
+-- Promenne pouzijte v generatoru pro datum.
+-- BONUS:
+-- Na vytvorena data najoinujte (left join) tabulku teror.
+-- Pomoci case when spocitejte, kolik v kazdem dnu v roce 2016 bylo utoku v zemi 'Pakistan' a kolik v zemi 'Afghanistan' - kazda zeme bude mit jeden sloupecek
+-- vysledek pak bude ukazovat pocet utoku po dnech - tam, kde zadny nebyl bude 0.

@@ -1,0 +1,572 @@
+-- FILTROVANI RADEK NA ZAKLADE PODMINEK
+------------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------
+-- CAST - PRETYPOVANI DATOVEHO TYPU
+---------------------------------------------------------
+
+-- popise tabulku - vcetne datovych typu, lze zkontrolovat, popř. opravit
+DESC TABLE teror;
+
+-- pretypovani datoveho typu - cislo, muzu pretypovat i celý sloupce, kde cislo ulozeno jako string, misto '1' pak dam 'nazev sloupce'
+SELECT CAST('1' AS INT);
+
+SELECT CAST('tohle neni cislo' AS INT);
+
+-- jiny zapis ::
+SELECT '1'::INT;
+
+SELECT 'tohle neni cislo'::INT;
+
+-- pretypovani datoveho typu - textovy retezec
+SELECT 1::VARCHAR; -- STRING
+
+-- pretypovani datoveho typu - datum
+
+SELECT '2021-03-13'::DATE;
+
+/*
+---------------------------------------------------------
+-- WHERE - PODMINKY: Zakladní operátory
+---------------------------------------------------------
+>
+<
+<=
+>=
+<> -> nerovna se
+!= -> nerovna se
+=
+*/
+
+-- Zobraz vsechny utoky v Praze
+SELECT * -- city, iyear, imonth, *
+FROM teror
+WHERE city = 'Prague';
+
+-- Zobraz sloupecky city a nhostkid (pocet unesenych), radky filtruj na ty utoky, kde byl unesen prave jeden clovek
+SELECT city, 
+       nhostkid 
+FROM teror 
+WHERE nhostkid = 1;
+
+---------------------------------------------------------
+-- AND, OR a závorky
+---------------------------------------------------------
+
+-- Zobraz utoky v Indii z mest Delina a Bara
+/* POZOR! And se vyhodnocuje přednostně! V tomto pripade se vyhodnoti podminky India + Delina a az nasledne Bara,
+jenze Bara je i v jinych zemich. Spatne: */
+SELECT *
+FROM teror
+WHERE country_txt = 'India' AND city='Delina' OR city='Bara';
+-- Spravne
+SELECT * 
+FROM teror
+WHERE country_txt = 'India' AND (city='Delina' OR city='Bara'); 
+-- Spravne, ale spatne - vyjde správne, ale jen proto, z Delina pouze v Indii
+SELECT *    
+FROM teror 
+WHERE country_txt = 'India' AND city='Bara' OR city='Delina';
+
+
+-- UKOLY SELEKTUJU.CZ ----------------------------------------------------------
+
+
+-- // A // Vyber z tabulky útoky v Německu, kde zemřel alespoň jeden terorista 
+
+SELECT *
+FROM teror
+WHERE country_txt = 'Germany' AND nkillter >= 1  ;
+
+-- // B // Zobraz jen sloupečky GNAME, COUNTRY_TXT, NKILL a všechny řádky (seřazené podle počtu obětí sestupně), na kterých je víc než 340 obětí (počet obětí je ve sloupci NKILL), sloupečky přejmenuj na ORGANIZACE, ZEME, POCET_OBETI
+                          
+SELECT 
+    GNAME AS ORGANIZACE
+    , COUNTRY_TXT AS ZEME
+    , NKILL AS POCET_OBETI
+FROM teror
+WHERE nkill > 340
+ORDER BY nkill DESC;
+
+
+---------------------------------------------------------                        
+-- WHERE (string function)
+---------------------------------------------------------
+
+--- nadstavba (kazda sql flavor se muze ruznit) -> dokumentace
+
+/*
+SPLIT, SPLIT_PART
+SUBSTRING
+LEFT
+RIGHT
+UPPER
+LENGTH
+*/
+
+-- SPLIT
+-- Vytvor array z IP adresy localhostu + Zobraz prvni cislici
+SELECT '127.0.0.1',
+       SPLIT('127.0.0.1', '.'), -- co má splitnout, argument - podle jaké podmínky (tady rozděl tam, kde je tečka)
+       SPLIT_PART('127.0.0.1', '.',1); -- rozděl tohle, tam kde je tečka a ukaž jen první hodnotu
+
+-- Dobré si pak přetypovat na správný datový typ, v tomto případě na INT
+SELECT '127.0.0.1',
+       SPLIT_PART('127.0.0.1', '.',1)::INT;
+
+-- SPLIT & ARRAY SIZE
+-- Vyber vsechna mesta a rozdel je podle poctu slov a spocti pocet polozek
+SELECT
+    city
+    ,ARRAY_SIZE(SPLIT(city,' ')) AS city_array_size
+FROM teror;
+
+-- UKOLY ----------------------------------------------------------
+
+-- Vypiste vsechny utoky, ktere maji trislovne a vice slovne nazvy mest (city)
+
+SELECT
+    city
+    ,SPLIT(city, ' ') AS city_array
+    ,ARRAY_SIZE(city_array) AS city_array_size
+FROM teror
+WHERE city_array_size >= 3;
+
+--Další způsob
+SELECT
+*
+FROM teror
+WHERE ARRAY_SIZE(SPLIT(city, ' ')) >= 3;
+
+----------------------------------------------------------
+
+
+
+-- LENGTH
+-- textova hodnota
+SELECT LENGTH('12345');
+-- ciselna hodnota
+SELECT LENGTH(12345); 
+-- mezera je taky znak
+SELECT LENGTH('dobry den');
+
+-- REPLACE
+SELECT city
+       ,REPLACE(city,' ','-') -- argument: ve sloupci city vyměň tohle za tohle, tady mezeru za pomlčku
+FROM teror;
+
+-- POkud chci něco vymazat, tak jako poslední argument funkce nedám nic
+SELECT city
+       ,REPLACE(city,'district')
+FROM teror;
+
+-- SUBSTRING & LOWER, UPPER, INITCAP
+-- Vyber mesto a jeho prvni pismeno + prvni pismeno bylo vzdy velkym pismenem, zbytek malym + kazde slovo zacina velkym pismenem
+SELECT city, 
+       SUBSTRING(city,1,1) AS prvni_pismeno, -- argumenty fce - kde má zacit a kde skoncit
+       UPPER(prvni_pismeno) || SUBSTRING(LOWER(city),2) AS prvni_pismeno_velke, -- zde svislítka misto fce CONCAT
+       INITCAP(city) AS kazde_slovo
+FROM teror; 
+
+-- Fce, která zvětší každé počáteční písmeno:
+SELECT city,
+    INITCAP(city) AS kazde_slovo
+FROM teror ;
+
+-- LEFT
+-- vybere mesto a pocet pismen zleva
+SELECT city, 
+       LEFT(city,1) AS prvni_pismeno
+FROM teror; 
+
+-- RIGHT & UPPER
+-- vybere mesto a pocet pismen zprava, muzu zabalit jeste do fce UPPER a bude to vse velke
+SELECT city, 
+       UPPER(RIGHT(city,3)) AS posledni_tri_pismena 
+FROM teror;
+
+---------------------------------------------------------                        
+-- WHERE (math function)
+---------------------------------------------------------
+/*
+HAVERSINE = vypočítává vzdálenost dvou bodů v km
+ROUND
+FLOOR
+CEIL
+*/
+
+-- HAVERSINE
+-- Vypocitej vzdalenost utoku od Czechitas officu, omez vyber na vzdalenost do 100 km
+SELECT gname, 
+       city, 
+       iyear, 
+       nkill,
+       HAVERSINE(50.0831153, 14.4255978, latitude, longitude) AS vzdalenost_od_czechitas -- v km
+FROM teror 
+WHERE vzdalenost_od_czechitas < 100 -- novy sloupec muzeme pouzit v podmince
+ORDER BY nkill DESC;
+
+
+
+-- ZAOKROUHLUJÍCÍ FUNKCE
+SELECT CEIL(1.5), -- zaokrouhluje nahoru (ceiling)
+       ROUND(1.5), -- zaokrouhluje normálně :-D
+       TRUNC(1.5), -- vezme jen číslo před desetinnou čárkou
+       FLOOR(1.5); -- zaokrouhluje dolu
+
+---------------------------------------------------------                        
+-- WHERE (date function)
+---------------------------------------------------------
+
+/*
+TO_DATE
+DATE_FROM_PARTS
+DATEADD
+EXTRACT
+*/
+
+
+-- Co snowflake sam rozezna jako datum? '2021-23-06' = je to ve špatném formátu yyyy-dd-mm
+
+/*
+
+'2020/03/05' - tady mu vadí /
+
+'1.3.2019' - blbej formát d.m.yyyy
+
+*/
+
+SELECT TO_DATE ('2021-23-06', 'YYYY-DD-MM'); -- první argument: jak to vypadá, druhý argument: v jakém formátu to je a vypadne nám univerzální
+SELECT TO_DATE ('2020/03/05', 'YYYY/DD/MM');
+SELECT TO_DATE ('1.3.2019', 'DD.MM.YYYY');
+
+------------------------------------------------------------------
+
+-- DATE_FROM_PARTS
+-- Vytvor sloupec s datem utoku
+SELECT DATE_FROM_PARTS(iyear, imonth, iday),
+       *
+FROM teror 
+LIMIT 100;
+
+-- DATEADD
+-- Zobraz utoky, ktere se staly v poslednich 5 letech
+SELECT 
+    DATE_FROM_PARTS(iyear, imonth, iday) AS datum
+    , *
+FROM teror
+WHERE datum > DATEADD(year, -5, CURRENT_DATE());
+
+
+SELECT CURRENT_DATE();
+
+SELECT CURRENT_TIMESTAMP();
+
+
+-- DATEDIFF
+
+-- Vypocitej pocet mesicu s covidem
+SELECT DATEDIFF(month,'2020-02-01',CURRENT_DATE());
+
+-- Zobraz utoky, ktere se staly do dvou let (vcetne) od prvniho utoku v datasetu ('2014-01-01')
+SELECT 
+    DATE_FROM_PARTS(iyear, imonth, iday) AS datum,
+    *
+FROM teror
+WHERE DATEDIFF(year, '2014-01-01', datum) <= 2; -- jen odecita od cisla roku
+
+
+
+-- EXTRACT
+-- Kdyz mame datum a chceme jen cast data
+SELECT DATE_FROM_PARTS(iyear, imonth, iday) AS datum, 
+       EXTRACT(YEAR FROM datum) AS rok,
+       YEAR(datum)
+FROM teror;
+
+
+-- UKOLY SELEKTUJU.CZ ----------------------------------------------------------
+
+// E // Z iYear, iMonth a iDay vytvořte sloupeček datum a vypište ho, pak vypište datum o tři měsíce později a nakonec datum o tři měsíce a tři dny později
+
+SELECT 
+    DATE_FROM_PARTS(iyear, imonth, iday) AS datum,
+    ,DATEADD (month, 3, datum) AS datum_a_tri_mesice
+    ,DATEADD (day, 3, datum_a_tri_mesice) AS datum_a_tri_mesice_a_tri_dny,
+    * 
+FROM teror;
+   
+        
+---------------------------------------------------------
+-- LIKE, ILIKE
+---------------------------------------------------------
+/*
+% jakýkoliv znaky
+_ jeden znak, jakýkoliv znak
+*/
+
+-- Způsoby, jak najít text a poradit si s case sensitivitou:
+SELECT 
+    DISTINCT(attacktype1_txt) 
+FROM teror 
+//WHERE attacktype1_txt LIKE 'bomb%' -- nenajde nic CASE SENSITIV!
+//WHERE attacktype1_txt LIKE 'Bomb%' -- najde Bombing/Explosion
+//WHERE attacktype1_txt ILIKE 'bomb%' -- ILIKE není CASE SENSITIV
+//WHERE LOWER(attacktype1_txt) LIKE 'bomb%' -- všechno udělá malé a pak hledá
+//WHERE attacktype1_txt LIKE '_omb%' -- je mi jedno, co je právě první znak
+;
+
+-- Vyber unikatni nazvy regionu, ktere obsahuji america (kdekoliv a v jakekoliv velikosti)
+SELECT 
+    DISTINCT(region_txt)
+FROM teror 
+WHERE region_txt ILIKE '%america%'; 
+
+-- Vyber unikatni nazvy organizaci, ktere zacinaji na a
+SELECT 
+    DISTINCT(gname) 
+FROM teror 
+WHERE gname ILIKE 'a%';
+
+-- Vyber unikatni nazvy organizaci, ktere maji v nazvu druhe pismeno a
+SELECT 
+    DISTINCT(gname) 
+FROM teror 
+WHERE gname ILIKE '_a%';
+
+-- Vyber vsechna mesta, ktera maji vice jak 2 slova
+SELECT city 
+FROM teror 
+WHERE city like '% % %';
+
+
+-- UKOLY SELEKTUJU.CZ ----------------------------------------------------------
+
+// D // Vypiš všechny organizace, které na jakémkoliv místě v názvu obsahují výraz „anti“ a výraz „extremists“
+
+SELECT 
+    DISTINCT(gname)
+FROM teror
+WHERE (gname ILIKE '%anti%') AND (gname ILIKE '%extremists%');
+
+// F // Vypiš všechny druhy útoků ATTACKTYPE1_TXT
+
+SELECT
+    DISTINCT(ATTACKTYPE1_TXT)
+FROM teror;
+
+// G // Vypiš všechny útoky v Německu v roce 2015, vypiš sloupečky IYEAR, IMONTH, IDAY, COUNTRY_TXT, REGION_TXT, PROVSTATE, CITY, NKILL, NKILLTER, NWOUND. Ve sloupečku COUNTRY_TXT bude všude hodnota ‘Německo’
+
+SELECT 
+    IYEAR
+    , IMONTH
+    , IDAY
+    , 'Německo' AS COUNTRY_TXT
+    , REGION_TXT
+    , PROVSTATE
+    , CITY
+    , NKILL
+    , NKILLTER
+    , NWOUND
+FROM teror
+WHERE COUNTRY_TXT = 'Germany' AND IYEAR = 2015;
+
+
+-------------------------------------------------------------------------------
+
+
+---------------------------------------------------------     
+-- IN, NOT IN, IS NOT
+---------------------------------------------------------                     
+
+-- IN, NOT IN (dva způsoby zápisu:)
+SELECT *
+FROM teror
+WHERE country_txt <> 'India' AND country_txt <> 'Somalia';
+
+-- lepší NOT IN, protože se nemusí řešit přednosti v pomdmínkách a bordel v nich
+
+SELECT *
+FROM teror
+WHERE country_txt NOT IN ('India','Somalia')
+//WHERE country_txt IN ('India','Somalia') -- alternativou je OR
+;
+
+-- IS NULL, IS NOT NULL
+SELECT weaptype1_txt,
+       nkillter 
+FROM teror 
+WHERE nkillter IS NOT NULL
+ORDER BY nkillter DESC;
+
+
+--------------------------------------------------------                        
+-- BETWEEN
+---------------------------------------------------------    
+
+-- cisla
+
+SELECT * 
+FROM teror
+WHERE nkillter >= 40 AND nkillter <= 60;
+
+
+SELECT * 
+FROM teror
+WHERE nkillter BETWEEN 40 AND 60; -- vcetne
+
+
+SELECT 
+    DISTINCT iyear
+FROM teror 
+WHERE iyear BETWEEN 2014 AND 2016; -- vybere unikatni roky mezi roky 2014 a 2016 (vcetne krajnich hodnot)
+
+
+-- pismena
+SELECT city, 
+       SUBSTRING(city,1,1) AS prvni_pismeno 
+FROM teror 
+WHERE prvni_pismeno BETWEEN 'A' AND 'C'; -- vybere mesta, ktera zacinaji na A B nebo C
+
+-- funguje i na datum
+
+-- UKOLY ----------------------------------------------------------
+
+-- Vypiste vsechny utoky mezi '2014-01-01' a '2014-06-30'
+
+SELECT 
+    DATE_FROM_PARTS(iyear, imonth, iday) AS datum,
+    *
+FROM teror 
+WHERE datum BETWEEN '2014-01-01' AND '2014-06-30';
+
+// C // Zobraz sloupečky IYEAR, IMONTH, IDAY, GNAME, CITY, ATTACKTYPE1_TXT, TARGTYPE1_TXT, WEAPTYPE1_TXT, WEAPDETAIL, NKILL, NWOUND a vyber jen útoky, které se staly v Czech Republic v letech 2015, 2016 a 2017. 
+-- Všechna data seřaď chronologicky sestupně
+
+SELECT 
+ IYEAR
+, IMONTH
+, IDAY
+, GNAME
+, CITY
+, ATTACKTYPE1_TXT
+, TARGTYPE1_TXT
+, WEAPTYPE1_TXT
+, WEAPDETAIL
+, NKILL
+, NWOUND
+FROM teror
+WHERE COUNTRY_TXT = 'Czech Republic' AND IYEAR BETWEEN 2015 AND 2017
+ORDER BY IYEAR, IMONTH, IDAY DESC;
+
+// I // Vypiš první 3 města seřazena abecedně kde bylo zabito 30 až 100 teroristů nebo zabito 500 až 1000 lidí. Vypiš i sloupečky nkillter a nkill.
+
+SELECT 
+   city
+    ,nkillter
+   , nkill
+FROM teror
+WHERE nkillter BETWEEN 30 AND 100 OR nkill BETWEEN 500 AND 1000
+ORDER BY city ASC
+LIMIT 3;
+
+// H // Kolik událostí se stalo ve třetím a čtvrtém měsíci a počet mrtvých teroristů není NULL?
+
+SELECT COUNT(*)
+FROM teror
+WHERE imonth = 3 OR imonth = 4 AND nkillter IS NOT null;
+-------------------------------------------------------------------------------
+
+---------------------------------------------------------                        
+-- IFNULL
+-- CASE WHEN
+---------------------------------------------------------       
+
+-- IFNULL
+SELECT
+    nkill
+    ,IFNULL(nkill, -99) AS nkill
+    ,IFNULL(nkill, 0) AS nkill
+FROM teror;
+
+SELECT AVG(nkill), AVG(IFNULL(nkill,-99)), AVG(IFNULL(nkill,0))
+FROM teror;
+
+SELECT AVG(nkill), AVG(IFNULL(nkill,-99)), AVG(IFNULL(nkill,0))
+FROM teror
+WHERE nkill IS NOT NULL
+//WHERE nkill IS NULL
+;
+
+
+
+
+-- CASE WHEN fce udělá to, že já jí řeknu, když něco, tak udělej něco
+-- Podmínky se vyhodnocují postupně, pozor na pořadí!!!
+
+SELECT 
+    country_txt
+    ,CASE WHEN country_txt = 'Germany' THEN 'Německo' END
+FROM teror;
+
+-- Vytvorime novy sloupec, kde bude hodnota v nkill kategorizovana
+SELECT nkill,
+       CASE
+         WHEN nkill IS NULL THEN 'unknown'
+         WHEN nkill > 100 THEN 'over 100 killed'
+         WHEN nkill > 0 THEN '1-100 killed'
+         WHEN nkill = 0 THEN 'none killed'
+         ELSE '00-ERROR'
+       END AS upraveny_nkill
+FROM teror
+ORDER BY upraveny_nkill
+; 
+
+
+-- vytvorime sloupec kontinent podle regionu
+
+SELECT DISTINCT region_txt
+FROM teror;
+
+SELECT region_txt,
+       CASE
+         WHEN region_txt ILIKE '%america%' THEN 'Amerika'
+         WHEN region_txt ILIKE '%africa%' THEN 'Afrika'
+         WHEN region_txt ILIKE '%asia%' THEN 'Asie'
+         ELSE region_txt
+       END AS continent
+FROM teror; 
+
+-- UKOLY SELEKTUJU.CZ ----------------------------------------------------------
+
+                        
+// J // Vypiš všechny útoky z roku 2014, ke kterým se přihlásil Islámský stát ('Islamic State of Iraq and the Levant (ISIL)').
+/*
+Vypiš sloupečky IYEAR, IMONTH, IDAY, GNAME, COUNTRY_TXT, REGION_TXT, PROVSTATE, CITY, NKILL, NKILLTER, NWOUND 
+a na konec přidej sloupeček EventImpact, který bude obsahovat:
+
+'Massacre' pro útoky s víc než 1000 obětí
+'Bloodbath' pro útoky s 501 - 1000 obětmi
+'Carnage' pro ůtoky s 251 - 500 obětmi
+'Blodshed' pro útoky se 100 - 250 obětmi
+'Slaugter' pro útoky s 1 - 100 obětmi
+a ‘N/A’ pro všechny ostatní útoky.
+*/
+
+                        
+// K // Vypiš všechny útoky s alespoň jednou obětí z Německa, Rakouska, Švýcarska, Francie a Itálie. 
+/*
+U Německa, Rakouska, Švýcarska nahraď region_txt za ‘DACH’ u zbytku nech původní region. 
+Vypiš sloupečky IYEAR, IMONTH, IDAY, COUNTRY_TXT, REGION_TXT, PROVSTATE, CITY, NKILL, NKILLTER, NWOUND. Výstup seřaď podle počtu raněných sestupně
+*/
+
+
+// L // Vypiš COUNTRY_TXT, CITY, NWOUND a 
+/* 
+přidej sloupeček vzdalenost_od_albertova obsahující vzdálenost místa útoku z pražské části Albertov v km 
+a sloupeček kategorie obsahující ‘Blízko’ pro útoky bližší 2000 km a ‘Daleko’ pro ostatní. 
+Vypiš jen útoky s víc než stovkou raněných a seřad je podle vzdálenosti od Albertova
+*/
+
+-------------------------------------------------------------------------------
+
