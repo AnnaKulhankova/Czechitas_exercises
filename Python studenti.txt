@@ -1,0 +1,40 @@
+import unidecode as uni
+
+#nacitam data z textaku
+vstup = open('studenti.txt', 'r', encoding='utf-8')
+studenti_txt = [radek.strip().split("\t") for radek in vstup]
+vstup.close()
+
+#orezavam prvni radek, kde je header
+studenti = [radek for radek in studenti_txt[1:]]
+
+#vyzobavam z rodneho cisla rok, prevadim na int a odectem od 121 ziskavam udaj o veku, ktery pridavam do seznamu seznamu
+vek = [121-(int(sloupec[2][:2])) for sloupec in studenti]
+i = 0
+for sloupec in studenti:
+  sloupec.append(vek[i])
+  i = i + 1
+
+#vyzobavam z rodneho cisla treti cislici a udavam podminku, ze pokud je to pět, tak na kazdy radek pridej 'zena', pokud ne, tak 'muz'
+for sloupec in studenti:
+  if sloupec[2][2] == '5':
+    sloupec.append('zena')
+  else:
+    sloupec.append('muz')
+
+#pomoci funkce unicode se zbavuji diakritiky a vytvarim email, opet pridavam do kazdeho seznamu
+for sloupec in studenti:
+  jmeno = uni.unidecode(sloupec[0])
+  prijmeni = uni.unidecode(sloupec[1])
+  email = prijmeni[0:5].lower()+jmeno[0:3].lower()+'@hybrid.edu'
+  sloupec.append(email)
+
+#definuji klice slovniku a vytvarim seznam slovniku
+dict_keys = ['jmeno', 'prijmeni', 'rodne cislo', 'vek', 'pohlavi', 'email']
+seznam_slovniku = [dict(zip(dict_keys, i)) for i in studenti]
+
+#zapisuji do jsonu
+import json
+slovnik = open('studenti.json', 'w', encoding='utf-8')
+json.dump(seznam_slovniku, slovnik, indent=4, ensure_ascii=False)
+slovnik.close()
