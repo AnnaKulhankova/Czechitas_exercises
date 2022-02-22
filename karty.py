@@ -1,7 +1,10 @@
+#otviram soubor se seznamem karet, rozdeluji jedotlive karty jako seznam seznamu
 soubor = open('karty.txt', 'r', encoding='utf-8')
 karty = [radek.strip() for radek in soubor]
 karty_split = [radek.split(" ") for radek in karty]
 soubor.close()
+
+#nahodne vybiram prvky seznamu a vybrane ze seznamu mazu, aby se v tazich neopakovaly
 import random
 prvni_tah = random.choice(karty_split)
 prvni_index = karty_split.index(prvni_tah)
@@ -17,6 +20,7 @@ del karty_split[treti_index]
 
 ctvrty_tah = random.choice(karty_split)
 
+#prejmenovavam string hodnoty na cislo, aby se daly secist a scitam hodnoty vybranych karet
 hodnoty = [prvni_tah[0], druhy_tah[0], treti_tah[0], ctvrty_tah[0]]
 list_pro_soucet = [hodnoty.replace("kluk", "10") for hodnoty in hodnoty]
 list_pro_soucet1 = [hodnoty.replace("dáma", "10") for hodnoty in list_pro_soucet]
